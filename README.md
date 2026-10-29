@@ -33,10 +33,13 @@ full screen like an app. The service worker (`sw.js`) caches the compiler and th
 engine on that first visit, so from then on it starts and compiles with no network at all. Every
 launch asks for the newest HTML with the HTTP cache bypassed, the other assets are revalidated in
 the background, and a new worker reloads the page once — so a deploy shows up on its own. The
-compile card prints the **build** it is running (`v0.3 · 6 examples`); if that line is missing you
-are looking at a cached copy, so reload or reopen the Home Screen app. iOS builds the Home Screen
-icon from a page screenshot because the repository has no raster icon; drop a 180×180 PNG at the
-root and link it as `apple-touch-icon` if you want a custom one.
+compile card prints the **build** it is running (`v0.4 · 6 examples`) next to a **Refresh app**
+button that unregisters the worker, empties the caches and reloads with a fresh URL — the way out
+of a stuck Home Screen copy. If that line is missing altogether you are looking at a cached page,
+so reload or reopen the app. `version.txt` at the site root always shows the deployed build, which
+is the quickest way to tell hosting apart from caching. iOS builds the Home Screen icon from a
+page screenshot because the repository has no raster icon; drop a 180×180 PNG at the root and
+link it as `apple-touch-icon` if you want a custom one.
 
 For a fully local run with no hosting, the app's **Run** button serves these same files inside
 this app's web view.
@@ -113,9 +116,10 @@ Six complete blueprints ship with the compiler and load from the example chips u
 editor toolbar (or the Format tab): a minimal cube, a wooden crate, a sports car (extruded body
 panels, mirrored wheels and lights), a table lamp (lathe base, cone shade, emissive bulb), a 1:1
 **Samsung TV 55"** built in millimetres, and a 1:1 **iPhone Pro** — tessellated rounded body,
-inset glasses, Dynamic Island, camera plateau with three lenses and their pupils, flash, lidar,
-side buttons, camera control, USB-C, speaker and mic holes, in the 149.6 × 71.5 × 8.25 mm
-current-Pro footprint (the file is `examples/iphone-18-pro.gscgeo.json`).
+inset glasses, a lit screen with a home-screen grid, dock and Dynamic Island, camera plateau with
+three lenses and their pupils, flash, lidar, side buttons, camera control, USB-C, speaker and mic
+holes, in the 149.6 × 71.5 × 8.25 mm current-Pro footprint (the file is
+`examples/iphone-18-pro.gscgeo.json`).
 
 ## Building a 1:1 object with an AI
 

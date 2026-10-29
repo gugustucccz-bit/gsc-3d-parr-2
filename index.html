@@ -134,6 +134,7 @@ main{display:grid;grid-template-columns:392px minmax(0,1fr);min-height:0}
 }
 .exChip:hover{border-color:var(--accent);color:var(--text)}
 .exChip:active{transform:translateY(1px)}
+.buildRow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .issues{
   border:1px solid var(--line);border-radius:9px;background:#0a0f15;
   max-height:180px;overflow:auto;padding:6px 8px;display:flex;flex-direction:column;gap:3px;
@@ -446,7 +447,10 @@ table.specTable code{color:var(--accent)}
         <li data-phase="lod"><span class="dot"></span>Build LOD chain</li>
         <li data-phase="report"><span class="dot"></span>Report</li>
       </ul>
-      <p class="hint" id="buildTag">build —</p>
+      <div class="buildRow">
+        <span class="hint" id="buildTag">build —</span>
+        <button id="btnRefresh" class="exChip" type="button">Refresh app</button>
+      </div>
     </section>
 
     <section class="card">
@@ -665,7 +669,7 @@ function setMobileView(view) {
 
 /* ═════════════════════ the format: one definition for everything ═════════════════════ */
 const GEO_VERSION = '0.1';
-const APP_BUILD = 'v0.3';
+const APP_BUILD = 'v0.5';
 const GEO_FORMAT = 'gsc-geo';
 const GEO_LIMITS = { nodes: 400, depth: 12 };
 
@@ -986,7 +990,7 @@ const EXAMPLES = {
     materials: [
       { id: 'titanium', baseColor: [0.58, 0.56, 0.53], metallic: 1, roughness: 0.3 },
       { id: 'glassFront', baseColor: [0.02, 0.022, 0.026], metallic: 0, roughness: 0.05 },
-      { id: 'screen', baseColor: [0.006, 0.008, 0.012], metallic: 0, roughness: 0.02 },
+      { id: 'screen', baseColor: [0.02, 0.03, 0.06], metallic: 0, roughness: 0.05, emissive: [0.05, 0.09, 0.17], emissiveIntensity: 0.9 },
       { id: 'glassBack', baseColor: [0.5, 0.5, 0.52], metallic: 0.15, roughness: 0.55 },
       { id: 'plateau', baseColor: [0.42, 0.42, 0.44], metallic: 0.25, roughness: 0.45 },
       { id: 'ring', baseColor: [0.05, 0.05, 0.06], metallic: 0.9, roughness: 0.3 },
@@ -994,6 +998,14 @@ const EXAMPLES = {
       { id: 'black', baseColor: [0.02, 0.02, 0.024], metallic: 0.1, roughness: 0.5 },
       { id: 'flash', baseColor: [0.95, 0.92, 0.85], metallic: 0, roughness: 0.25, emissive: [1, 0.93, 0.8], emissiveIntensity: 0.8 },
       { id: 'button', baseColor: [0.45, 0.44, 0.42], metallic: 1, roughness: 0.35 },
+      { id: 'uiGlass', baseColor: [1, 1, 1], metallic: 0, roughness: 0.2, opacity: 0.16 },
+      { id: 'iconBlue', baseColor: [0.16, 0.45, 0.95], metallic: 0, roughness: 0.4, emissive: [0.16, 0.45, 0.95], emissiveIntensity: 0.5 },
+      { id: 'iconGreen', baseColor: [0.18, 0.72, 0.42], metallic: 0, roughness: 0.4, emissive: [0.18, 0.72, 0.42], emissiveIntensity: 0.5 },
+      { id: 'iconOrange', baseColor: [0.95, 0.55, 0.12], metallic: 0, roughness: 0.4, emissive: [0.95, 0.55, 0.12], emissiveIntensity: 0.45 },
+      { id: 'iconRed', baseColor: [0.9, 0.22, 0.26], metallic: 0, roughness: 0.4, emissive: [0.9, 0.22, 0.26], emissiveIntensity: 0.45 },
+      { id: 'iconPurple', baseColor: [0.48, 0.32, 0.9], metallic: 0, roughness: 0.4, emissive: [0.48, 0.32, 0.9], emissiveIntensity: 0.45 },
+      { id: 'iconTeal', baseColor: [0.1, 0.7, 0.75], metallic: 0, roughness: 0.4, emissive: [0.1, 0.7, 0.75], emissiveIntensity: 0.45 },
+      { id: 'iconWhite', baseColor: [0.9, 0.92, 0.96], metallic: 0, roughness: 0.35, emissive: [0.9, 0.92, 0.96], emissiveIntensity: 0.35 },
     ],
     root: {
       id: 'iphone-18-pro',
@@ -1133,6 +1145,41 @@ const EXAMPLES = {
             { id: 'volume-down', type: 'box', material: 'button', position: [-35.15, 26, 0], params: { size: [1.5, 11, 3.2] } },
             { id: 'power-button', type: 'box', material: 'button', position: [35.15, 30, 0], params: { size: [1.5, 20, 3.2] } },
             { id: 'camera-control', type: 'box', material: 'button', position: [35.3, 2, 0], params: { size: [1, 9, 2.6] } },
+          ],
+        },
+        {
+          id: 'ui',
+          type: 'group',
+          children: [
+            { id: 'dock', type: 'extrude', material: 'uiGlass', position: [0, -58, -4.4], params: { profile: [[31, 1], [28.657, 6.657], [23, 9], [-23, 9], [-28.657, 6.657], [-31, 1], [-31, -1], [-28.657, -6.657], [-23, -9], [23, -9], [28.657, -6.657], [31, -1]], depth: 0.1, taper: 1 } },
+            { id: 'tile-1', type: 'box', material: 'iconBlue', position: [-25.2, 47, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-2', type: 'box', material: 'iconGreen', position: [-8.4, 47, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-3', type: 'box', material: 'iconOrange', position: [8.4, 47, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-4', type: 'box', material: 'iconRed', position: [25.2, 47, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-5', type: 'box', material: 'iconPurple', position: [-25.2, 30.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-6', type: 'box', material: 'iconTeal', position: [-8.4, 30.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-7', type: 'box', material: 'iconWhite', position: [8.4, 30.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-8', type: 'box', material: 'iconBlue', position: [25.2, 30.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-9', type: 'box', material: 'iconGreen', position: [-25.2, 14, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-10', type: 'box', material: 'iconOrange', position: [-8.4, 14, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-11', type: 'box', material: 'iconRed', position: [8.4, 14, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-12', type: 'box', material: 'iconPurple', position: [25.2, 14, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-13', type: 'box', material: 'iconTeal', position: [-25.2, -2.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-14', type: 'box', material: 'iconWhite', position: [-8.4, -2.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-15', type: 'box', material: 'iconBlue', position: [8.4, -2.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-16', type: 'box', material: 'iconGreen', position: [25.2, -2.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-17', type: 'box', material: 'iconOrange', position: [-25.2, -19, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-18', type: 'box', material: 'iconRed', position: [-8.4, -19, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-19', type: 'box', material: 'iconPurple', position: [8.4, -19, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-20', type: 'box', material: 'iconTeal', position: [25.2, -19, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-21', type: 'box', material: 'iconWhite', position: [-25.2, -35.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-22', type: 'box', material: 'iconBlue', position: [-8.4, -35.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-23', type: 'box', material: 'iconGreen', position: [8.4, -35.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'tile-24', type: 'box', material: 'iconOrange', position: [25.2, -35.5, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'dock-1', type: 'box', material: 'iconTeal', position: [-25.2, -58, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'dock-2', type: 'box', material: 'iconBlue', position: [-8.4, -58, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'dock-3', type: 'box', material: 'iconGreen', position: [8.4, -58, -4.6], params: { size: [10.5, 10.5, 0.3] } },
+            { id: 'dock-4', type: 'box', material: 'iconRed', position: [25.2, -58, -4.6], params: { size: [10.5, 10.5, 0.3] } },
           ],
         },
         {
@@ -2815,6 +2862,19 @@ function wireUi() {
     setStatus('Editor cleared.');
   });
 
+  $('#btnRefresh').addEventListener('click', async () => {
+    try {
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((registration) => registration.unregister()));
+      }
+      if (window.caches) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((key) => caches.delete(key)));
+      }
+    } catch (err) { /* nothing to clear */ }
+    location.replace(`${location.pathname}?fresh=${Date.now()}`);
+  });
   $('#btnGlb').addEventListener('click', exportGlb);
   $('#btnNormalized').addEventListener('click', downloadNormalized);
   $('#btnCopyOutput').addEventListener('click', () => {
