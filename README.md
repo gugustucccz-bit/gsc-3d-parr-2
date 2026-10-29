@@ -107,10 +107,13 @@ without breaking a build.
 
 ## Examples in the page
 
-Five complete blueprints ship with the compiler and can be loaded from the editor toolbar or
+Six complete blueprints ship with the compiler and can be loaded from the editor toolbar or
 the Format tab: a minimal cube, a wooden crate, a sports car (extruded body panels, mirrored
-wheels and lights), a table lamp (lathe base, cone shade, emissive bulb) and a 1:1
-**Samsung TV 55"** built in millimetres.
+wheels and lights), a table lamp (lathe base, cone shade, emissive bulb), a 1:1 **Samsung TV
+55"** built in millimetres, and a 1:1 **iPhone Pro** — tessellated rounded body, inset glasses,
+Dynamic Island, camera plateau with three lenses and their pupils, flash, lidar, side buttons,
+camera control, USB-C, speaker and mic holes, in the 149.6 × 71.5 × 8.25 mm current-Pro
+footprint (the file is `examples/iphone-18-pro.gscgeo.json`).
 
 ## Building a 1:1 object with an AI
 
