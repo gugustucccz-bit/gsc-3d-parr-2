@@ -107,13 +107,13 @@ without breaking a build.
 
 ## Examples in the page
 
-Six complete blueprints ship with the compiler and can be loaded from the editor toolbar or
-the Format tab: a minimal cube, a wooden crate, a sports car (extruded body panels, mirrored
-wheels and lights), a table lamp (lathe base, cone shade, emissive bulb), a 1:1 **Samsung TV
-55"** built in millimetres, and a 1:1 **iPhone Pro** — tessellated rounded body, inset glasses,
-Dynamic Island, camera plateau with three lenses and their pupils, flash, lidar, side buttons,
-camera control, USB-C, speaker and mic holes, in the 149.6 × 71.5 × 8.25 mm current-Pro
-footprint (the file is `examples/iphone-18-pro.gscgeo.json`).
+Six complete blueprints ship with the compiler and load from the example chips under the
+editor toolbar (or the Format tab): a minimal cube, a wooden crate, a sports car (extruded body
+panels, mirrored wheels and lights), a table lamp (lathe base, cone shade, emissive bulb), a 1:1
+**Samsung TV 55"** built in millimetres, and a 1:1 **iPhone Pro** — tessellated rounded body,
+inset glasses, Dynamic Island, camera plateau with three lenses and their pupils, flash, lidar,
+side buttons, camera control, USB-C, speaker and mic holes, in the 149.6 × 71.5 × 8.25 mm
+current-Pro footprint (the file is `examples/iphone-18-pro.gscgeo.json`).
 
 ## Building a 1:1 object with an AI
 
@@ -122,7 +122,7 @@ the format contract, the 16:9 panel math, a datasheet table for 43"–85" Samsun
 part-by-part build plan (bezel frame, flush glossy panel, stepped back with ports and vents,
 pedestal stand and its variants), the material palette, a self-check list and the common
 mistakes. Its worked answer is `examples/samsung-tv-55.gscgeo.json`, which compiles to
-1227.6 × 767.9 × 27.4 mm — load it with **Load example → Samsung TV 55"**.
+1227.6 × 767.9 × 236.0 mm — load it from the **Samsung TV 55"** chip under the editor toolbar.
 
 ## Notes and limits
 
