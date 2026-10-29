@@ -33,7 +33,7 @@ full screen like an app. The service worker (`sw.js`) caches the compiler and th
 engine on that first visit, so from then on it starts and compiles with no network at all. Every
 launch asks for the newest HTML with the HTTP cache bypassed, the other assets are revalidated in
 the background, and a new worker reloads the page once — so a deploy shows up on its own. The
-compile card prints the **build** it is running (`v0.4 · 6 examples`) next to a **Refresh app**
+compile card prints the **build** it is running (`v0.7 · 7 examples`) next to a **Refresh app**
 button that unregisters the worker, empties the caches and reloads with a fresh URL — the way out
 of a stuck Home Screen copy. If that line is missing altogether you are looking at a cached page,
 so reload or reopen the app. `version.txt` at the site root always shows the deployed build, which
@@ -104,22 +104,37 @@ Node types: `group`, `box`, `cylinder`, `cone`, `sphere`, `capsule`, `torus`, `l
   car body panels, gables, silhouette slabs.
 
 Materials are sRGB: `baseColor` as `[r, g, b]` in 0–1 or `"#rrggbb"`, plus `metallic`,
-`roughness`, `opacity`, and optionally `emissive` / `emissiveIntensity`.
+`roughness`, `opacity`, and optionally `emissive` / `emissiveIntensity` and a `texture` (see
+below).
 
 Rules: one `root`, unique ids, metres by default (Y up, −Z forward), at most 400 nodes and
 12 levels of nesting. Unknown fields and params are warnings, not errors — typos stay visible
 without breaking a build.
 
+## Textures, theme and haptics
+
+A material can carry a `texture` that needs no external file: either a `data:image/…` URL (it
+travels inside the JSON) or a procedural descriptor the compiler paints into a canvas —
+`{"kind": "gradient", …}`, `{"kind": "keys", …}`, `{"kind": "stripes", …}` or
+`{"kind": "grid", …}`. `textureRepeat` and `textureOffset` place it; `extrude` geometry uses
+blueprint units as UVs, so a 302 × 196 mm screen plate needs `[0.003311, 0.005102]` with offset
+`[0.5, 0.5]`. The iPhone's wallpaper and the MacBook's keyboard and display are made this way,
+and the GLB export embeds the maps.
+
+The header switches between the dark and a light theme (remembered in `localStorage`), and
+Compile plays a haptic pattern on success (`compile-ok`) or on a rejected blueprint
+(`compile-fail`) through `src/haptics.js`.
+
 ## Examples in the page
 
-Six complete blueprints ship with the compiler and load from the example chips under the
+Seven complete blueprints ship with the compiler and load from the example chips under the
 editor toolbar (or the Format tab): a minimal cube, a wooden crate, a sports car (extruded body
 panels, mirrored wheels and lights), a table lamp (lathe base, cone shade, emissive bulb), a 1:1
-**Samsung TV 55"** built in millimetres, and a 1:1 **iPhone Pro** — tessellated rounded body,
-inset glasses, a lit screen with a home-screen grid, dock and Dynamic Island, camera plateau with
-three lenses and their pupils, flash, lidar, side buttons, camera control, USB-C, speaker and mic
-holes, in the 149.6 × 71.5 × 8.25 mm current-Pro footprint (the file is
-`examples/iphone-18-pro.gscgeo.json`).
+**Samsung TV 55"** built in millimetres, a 1:1 **iPhone Pro** — tessellated rounded body, inset
+glasses, a lit screen with a wallpaper texture, home-screen grid, dock and Dynamic Island, camera
+plateau with three lens rings, flash, lidar, side buttons, USB-C and speaker holes, in the
+149.6 × 71.5 × 8.25 mm current-Pro footprint — and a 1:1 **MacBook Pro 14"** open on its hinge,
+with an aluminium body, textured keyboard, trackpad, display with wallpaper and its ports.
 
 ## Building a 1:1 object with an AI
 

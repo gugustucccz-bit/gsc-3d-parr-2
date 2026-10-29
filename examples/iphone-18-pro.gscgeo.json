@@ -16,7 +16,7 @@
   "materials": [
     { "id": "titanium", "baseColor": [0.58, 0.56, 0.53], "metallic": 1, "roughness": 0.3 },
     { "id": "glassFront", "baseColor": [0.02, 0.022, 0.026], "metallic": 0, "roughness": 0.05 },
-    { "id": "screen", "baseColor": [0.02, 0.03, 0.06], "metallic": 0, "roughness": 0.05, "emissive": [0.05, 0.09, 0.17], "emissiveIntensity": 0.9 },
+    { "id": "screen", "baseColor": [0.05, 0.05, 0.07], "metallic": 0, "roughness": 0.18, "emissive": [0.02, 0.03, 0.06], "emissiveIntensity": 0.5, "texture": { "kind": "gradient", "from": "#2b1155", "to": "#080b1c", "angle": 120, "glows": [{ "x": 0.72, "y": 0.22, "r": 0.55, "color": "#7b5cff" }, { "x": 0.24, "y": 0.78, "r": 0.5, "color": "#18c8ff" }] }, "textureRepeat": [0.0146, 0.0068], "textureOffset": [0.5, 0.5] },
     { "id": "glassBack", "baseColor": [0.5, 0.5, 0.52], "metallic": 0.15, "roughness": 0.55 },
     { "id": "plateau", "baseColor": [0.42, 0.42, 0.44], "metallic": 0.25, "roughness": 0.45 },
     { "id": "ring", "baseColor": [0.05, 0.05, 0.06], "metallic": 0.9, "roughness": 0.3 },

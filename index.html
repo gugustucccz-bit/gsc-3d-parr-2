@@ -356,6 +356,47 @@ table.specTable code{color:var(--accent)}
 @media (max-width: 560px){
   #source{height:32vh}
 }
+
+/* ---------- light theme ---------- */
+body[data-theme="light"]{
+  --bg:#eef2f7;
+  --bg2:#e6ecf4;
+  --panel:#ffffff;
+  --panel2:#f3f6fa;
+  --line:#d3dce7;
+  --line2:#b9c6d6;
+  --text:#16202c;
+  --muted:#5d7186;
+  --accent:#0f9d7a;
+  --blue:#2b6cf0;
+  --warn:#b7791f;
+  --err:#c53030;
+  background:radial-gradient(1100px 560px at 82% -12%,#dce8f5 0%,var(--bg) 62%) fixed;
+}
+body[data-theme="light"] .topbar,
+body[data-theme="light"] .statusbar{background:rgba(255,255,255,0.88)}
+body[data-theme="light"] .card{background:linear-gradient(180deg,#ffffff,#f6f9fc)}
+body[data-theme="light"] textarea,
+body[data-theme="light"] input,
+body[data-theme="light"] select{background:#f7fafc;border-color:var(--line);color:var(--text)}
+body[data-theme="light"] #source,
+body[data-theme="light"] pre.code,
+body[data-theme="light"] pre.output{background:#f6f9fc;color:#22303f}
+body[data-theme="light"] .issues,
+body[data-theme="light"] .kv,
+body[data-theme="light"] .statGrid div,
+body[data-theme="light"] .specCard{background:#f6f9fc}
+body[data-theme="light"] .exChip,
+body[data-theme="light"] .btn{background:#f3f6fa;color:var(--text)}
+body[data-theme="light"] .btn.primary{color:#04120e}
+body[data-theme="light"] .chip,
+body[data-theme="light"] .hud div,
+body[data-theme="light"] .hudSelect{background:rgba(255,255,255,0.88);color:#33455c}
+body[data-theme="light"] .hud b{color:#0f9d7a}
+body[data-theme="light"] .tab.active{background:#ffffff}
+body[data-theme="light"] .mobilebar{background:rgba(255,255,255,0.94)}
+body[data-theme="light"] .seg{background:#eef3f9}
+body[data-theme="light"] table.specTable td{border-color:#e6ecf3;color:#2c3a4a}
 </style>
 </head>
 <body>
@@ -370,6 +411,7 @@ table.specTable code{color:var(--accent)}
   </div>
   <div class="topactions">
     <span class="pill">GSC-GEO <strong>v0.1</strong> · JSON → mesh</span>
+    <button id="btnTheme" class="btn ghost small" type="button" title="Switch colour theme">Light</button>
   </div>
 </header>
 
@@ -393,6 +435,7 @@ table.specTable code{color:var(--accent)}
         <button class="exChip" type="button" data-example="lamp">Table lamp</button>
         <button class="exChip" type="button" data-example="tv">Samsung TV 55"</button>
         <button class="exChip" type="button" data-example="phone">iPhone 18 Pro</button>
+        <button class="exChip" type="button" data-example="macbook">MacBook Pro 14"</button>
       </div>
       <div class="editorWrap">
         <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder='Paste a GSC-GEO blueprint here, or drop a .json file.
@@ -620,6 +663,22 @@ function resetPhases() {
   document.querySelectorAll('#phases li').forEach((li) => { delete li.dataset.state; });
 }
 
+/* ───────────────────────── theme & haptics ───────────────────────── */
+function applyTheme(theme) {
+  const next = theme === 'light' ? 'light' : 'dark';
+  if (next === 'light') document.body.dataset.theme = 'light';
+  else delete document.body.dataset.theme;
+  try { localStorage.setItem('gsc3d.theme', next); } catch (err) { /* private mode */ }
+  const button = $('#btnTheme');
+  if (button) button.textContent = next === 'light' ? 'Dark' : 'Light';
+}
+
+function hapticFx(name) {
+  import('./src/haptics.js').then((mod) => {
+    try { if (typeof mod.haptic === 'function') mod.haptic(name); } catch (err) { /* ignore */ }
+  }).catch(() => { /* haptics not available here */ });
+}
+
 /* ───────────────────────── phone layout ───────────────────────── */
 const MOBILE_QUERY = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
 
@@ -669,7 +728,7 @@ function setMobileView(view) {
 
 /* ═════════════════════ the format: one definition for everything ═════════════════════ */
 const GEO_VERSION = '0.1';
-const APP_BUILD = 'v0.6';
+const APP_BUILD = 'v0.7';
 const GEO_FORMAT = 'gsc-geo';
 const GEO_LIMITS = { nodes: 400, depth: 12 };
 
@@ -704,6 +763,9 @@ const MATERIAL_FIELDS = [
   { key: 'opacity', type: 'number 0–1', req: false, def: '1', desc: 'Below 1 makes the material transparent (glass, decals).' },
   { key: 'emissive', type: '[r, g, b] or "#rrggbb"', req: false, def: '—', desc: 'Emission colour, for lamps, screens and lights.' },
   { key: 'emissiveIntensity', type: 'number 0–6', req: false, def: '1', desc: 'Emission strength; only used together with <code>emissive</code>.' },
+  { key: 'texture', type: 'data URL or { kind }', req: false, def: '—', desc: 'Base-colour map: either a <code>data:image/…</code> URL, or a procedural descriptor <code>{ "kind": "gradient" | "keys" | "stripes" | "grid", … }</code> drawn by the compiler — no external file needed.' },
+  { key: 'textureRepeat', type: '[u, v]', req: false, def: '[1, 1]', desc: 'Tiling factor of the texture. For <code>extrude</code> geometry the UVs are blueprint units, so use <code>1/size</code>.' },
+  { key: 'textureOffset', type: '[u, v]', req: false, def: '[0, 0]', desc: 'UV offset, applied after the repeat. <code>[0.5, 0.5]</code> centres the image on an extrude.' },
 ];
 
 const NODE_FIELDS = [
@@ -990,7 +1052,7 @@ const EXAMPLES = {
     materials: [
       { id: 'titanium', baseColor: [0.58, 0.56, 0.53], metallic: 1, roughness: 0.3 },
       { id: 'glassFront', baseColor: [0.02, 0.022, 0.026], metallic: 0, roughness: 0.05 },
-      { id: 'screen', baseColor: [0.02, 0.03, 0.06], metallic: 0, roughness: 0.05, emissive: [0.05, 0.09, 0.17], emissiveIntensity: 0.9 },
+      { id: 'screen', baseColor: [0.05, 0.05, 0.07], metallic: 0, roughness: 0.18, emissive: [0.02, 0.03, 0.06], emissiveIntensity: 0.5, texture: { kind: 'gradient', from: '#2b1155', to: '#080b1c', angle: 120, glows: [{ x: 0.72, y: 0.22, r: 0.55, color: '#7b5cff' }, { x: 0.24, y: 0.78, r: 0.5, color: '#18c8ff' }] }, textureRepeat: [0.0146, 0.0068], textureOffset: [0.5, 0.5] },
       { id: 'glassBack', baseColor: [0.5, 0.5, 0.52], metallic: 0.15, roughness: 0.55 },
       { id: 'plateau', baseColor: [0.42, 0.42, 0.44], metallic: 0.25, roughness: 0.45 },
       { id: 'ring', baseColor: [0.05, 0.05, 0.06], metallic: 0.9, roughness: 0.3 },
@@ -1220,6 +1282,106 @@ const EXAMPLES = {
       ],
     },
   },
+  macbook: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'macbook-pro-14', category: 'laptop', units: 'mm', upAxis: 'Y', forwardAxis: '-Z' },
+    budget: { targetTriangles: 12000, lodLevels: 3, textureResolution: 2048 },
+    materials: [
+      { id: 'alu', baseColor: [0.62, 0.63, 0.65], metallic: 1, roughness: 0.32 },
+      { id: 'black', baseColor: [0.03, 0.03, 0.035], metallic: 0.2, roughness: 0.5 },
+      { id: 'trackpad', baseColor: [0.5, 0.51, 0.53], metallic: 0.8, roughness: 0.22 },
+      { id: 'keys', baseColor: [0.09, 0.09, 0.1], metallic: 0.1, roughness: 0.7, texture: { kind: 'keys', cols: 14, rows: 5, bg: '#0f1013', key: '#26262c', gap: 0.14, radius: 0.24 } },
+      { id: 'wallpaper', baseColor: [0.05, 0.05, 0.07], metallic: 0, roughness: 0.2, texture: { kind: 'gradient', from: '#0b2a4a', to: '#05080f', angle: 120, glows: [{ x: 0.75, y: 0.25, r: 0.5, color: '#3fa9ff' }, { x: 0.25, y: 0.8, r: 0.45, color: '#8a5cf6' }] }, textureRepeat: [0.003311, 0.005102], textureOffset: [0.5, 0.5] },
+    ],
+    root: {
+      id: 'macbook-pro-14',
+      type: 'group',
+      children: [
+        {
+          id: 'base',
+          type: 'extrude',
+          material: 'alu',
+          rotation: [90, 0, 0],
+          position: [0, 4.7, 0],
+          params: {
+            profile: [
+              [156.3, 98.6], [155.387, 103.192], [152.785, 107.085], [148.892, 109.687], [144.3, 110.6],
+              [-148.892, 109.687], [-152.785, 107.085], [-155.387, 103.192], [-156.3, 98.6],
+              [-155.387, -103.192], [-152.785, -107.085], [-148.892, -109.687], [-144.3, -110.6],
+              [148.892, -109.687], [152.785, -107.085], [155.387, -103.192], [156.3, -98.6],
+            ],
+            depth: 9.4,
+            taper: 1,
+          },
+        },
+        { id: 'keyboard', type: 'box', material: 'keys', position: [0, 9.55, 34], params: { size: [283, 0.3, 108] } },
+        { id: 'trackpad', type: 'box', material: 'trackpad', position: [0, 9.5, -58], params: { size: [128, 0.25, 80] } },
+        { id: 'hinge', type: 'cylinder', material: 'alu', position: [0, 9.4, 108], rotation: [0, 0, 90], params: { radiusTop: 3.2, radiusBottom: 3.2, height: 280, radialSegments: 24 } },
+        {
+          id: 'lid',
+          type: 'group',
+          position: [0, 9.4, 110.6],
+          rotation: [15, 0, 0],
+          children: [
+            {
+              id: 'lid-shell',
+              type: 'extrude',
+              material: 'alu',
+              position: [0, 110.6, 0],
+              params: {
+                profile: [
+                  [156.3, 98.6], [155.387, 103.192], [152.785, 107.085], [148.892, 109.687], [144.3, 110.6],
+                  [-148.892, 109.687], [-152.785, 107.085], [-155.387, 103.192], [-156.3, 98.6],
+                  [-155.387, -103.192], [-152.785, -107.085], [-148.892, -109.687], [-144.3, -110.6],
+                  [148.892, -109.687], [152.785, -107.085], [155.387, -103.192], [156.3, -98.6],
+                ],
+                depth: 5.5,
+                taper: 1,
+              },
+            },
+            {
+              id: 'bezel',
+              type: 'extrude',
+              material: 'black',
+              position: [0, 110.6, -2.85],
+              params: {
+                profile: [
+                  [155, 92], [154.239, 95.827], [152.071, 99.071], [148.827, 101.239], [145, 102],
+                  [-148.827, 101.239], [-152.071, 99.071], [-154.239, 95.827], [-155, 92],
+                  [-154.239, -95.827], [-152.071, -99.071], [-148.827, -101.239], [-145, -102],
+                  [148.827, -101.239], [152.071, -99.071], [154.239, -95.827], [155, -92],
+                ],
+                depth: 0.3,
+                taper: 1,
+              },
+            },
+            {
+              id: 'screen',
+              type: 'extrude',
+              material: 'wallpaper',
+              position: [0, 110.6, -3],
+              params: {
+                profile: [
+                  [151, 89], [150.315, 92.444], [148.364, 95.364], [145.444, 97.315], [142, 98],
+                  [-145.444, 97.315], [-148.364, 95.364], [-150.315, 92.444], [-151, 89],
+                  [-150.315, -92.444], [-148.364, -95.364], [-145.444, -97.315], [-142, -98],
+                  [145.444, -97.315], [148.364, -95.364], [150.315, -92.444], [151, -89],
+                ],
+                depth: 0.35,
+                taper: 1,
+              },
+            },
+            { id: 'notch', type: 'box', material: 'black', position: [0, 206, -3.1], params: { size: [26, 5, 0.5] } },
+          ],
+        },
+        { id: 'usb-c-left', type: 'box', material: 'black', position: [-156.35, 4.7, 60], params: { size: [0.6, 3.4, 12] } },
+        { id: 'usb-c-left-2', type: 'box', material: 'black', position: [-156.35, 4.7, 42], params: { size: [0.6, 3.4, 12] } },
+        { id: 'hdmi', type: 'box', material: 'black', position: [156.35, 4.7, 60], params: { size: [0.6, 4, 16] } },
+        { id: 'sdcard', type: 'box', material: 'black', position: [156.35, 4.7, 36], params: { size: [0.6, 3, 14] } },
+      ],
+    },
+  },
 };
 
 /* ───────────────────────── state ───────────────────────── */
@@ -1332,8 +1494,20 @@ function validateBlueprint(doc) {
       if (m.emissiveIntensity !== undefined && !(isNum(m.emissiveIntensity) && m.emissiveIntensity >= 0 && m.emissiveIntensity <= 6)) {
         err('E_MATERIAL_RANGE', `${p}.emissiveIntensity`, 'emissiveIntensity must be a number between 0 and 6.');
       }
+      if (m.texture !== undefined) {
+        const t = m.texture;
+        const ok = (typeof t === 'string' && /^data:image\//.test(t))
+          || (isPlainObject(t) && ['gradient', 'keys', 'stripes', 'grid'].includes(t.kind));
+        if (!ok) err('E_MATERIAL_TEXTURE', `${p}.texture`, 'texture must be a data:image… URL or { "kind": "gradient" | "keys" | "stripes" | "grid" }.');
+        ['textureRepeat', 'textureOffset'].forEach((key) => {
+          const v = m[key];
+          if (v !== undefined && !(Array.isArray(v) && v.length === 2 && v.every(isNum))) {
+            err('E_MATERIAL_TEXTURE', `${p}.${key}`, `${key} must be [u, v] numbers.`);
+          }
+        });
+      }
       Object.keys(m).forEach((key) => {
-        if (!['id', 'baseColor', 'metallic', 'roughness', 'opacity', 'emissive', 'emissiveIntensity'].includes(key)) {
+        if (!['id', 'baseColor', 'metallic', 'roughness', 'opacity', 'emissive', 'emissiveIntensity', 'texture', 'textureRepeat', 'textureOffset'].includes(key)) {
           warn('W_MATERIAL_KEY', `${p}.${key}`, `unknown material field "${key}" — ignored.`);
         }
       });
@@ -1498,6 +1672,11 @@ function resolveMaterial(m) {
     out.emissive = colorValue(m.emissive, [1, 1, 1]);
     out.emissiveIntensity = r4(clamp(num(m.emissiveIntensity, 1), 0, 6));
   }
+  if (m.texture !== undefined) {
+    out.texture = typeof m.texture === 'string' ? m.texture : JSON.parse(JSON.stringify(m.texture));
+    out.textureRepeat = [num(m.textureRepeat && m.textureRepeat[0], 1), num(m.textureRepeat && m.textureRepeat[1], 1)];
+    out.textureOffset = [num(m.textureOffset && m.textureOffset[0], 0), num(m.textureOffset && m.textureOffset[1], 0)];
+  }
   return out;
 }
 
@@ -1592,6 +1771,125 @@ function applyColor(target, value) {
   }
 }
 
+/* ───────────────────────── textures ───────────────────────── */
+const textureCache = new Map();
+
+function drawGradient(ctx, w, h, spec) {
+  const angle = (num(spec.angle, 135) * Math.PI) / 180;
+  const dx = Math.cos(angle) * w;
+  const dy = Math.sin(angle) * h;
+  const gradient = ctx.createLinearGradient((w - dx) / 2, (h - dy) / 2, (w + dx) / 2, (h + dy) / 2);
+  gradient.addColorStop(0, spec.from || '#1b2b6b');
+  gradient.addColorStop(1, spec.to || '#070a1a');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, w, h);
+  (Array.isArray(spec.glows) ? spec.glows : []).forEach((glow) => {
+    const gx = clamp(num(glow.x, 0.7), 0, 1) * w;
+    const gy = clamp(num(glow.y, 0.3), 0, 1) * h;
+    const radius = Math.max(w, h) * clamp(num(glow.r, 0.5), 0.05, 2);
+    const radial = ctx.createRadialGradient(gx, gy, 0, gx, gy, radius);
+    radial.addColorStop(0, glow.color || '#5ee7ff');
+    radial.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = radial;
+    ctx.fillRect(0, 0, w, h);
+  });
+}
+
+function drawKeys(ctx, w, h, spec) {
+  ctx.fillStyle = spec.bg || '#101014';
+  ctx.fillRect(0, 0, w, h);
+  const cols = clamp(Math.round(num(spec.cols, 14)), 2, 40);
+  const rows = clamp(Math.round(num(spec.rows, 5)), 1, 20);
+  const gap = clamp(num(spec.gap, 0.14), 0, 0.6);
+  const radius = Math.min(w / cols, h / rows) * clamp(num(spec.radius, 0.24), 0, 0.5);
+  ctx.fillStyle = spec.key || '#26262c';
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const kw = (w / cols) * (1 - gap);
+      const kh = (h / rows) * (1 - gap);
+      const x = c * (w / cols) + (w / cols) * gap / 2;
+      const y = r * (h / rows) + (h / rows) * gap / 2;
+      ctx.beginPath();
+      if (typeof ctx.roundRect === 'function') ctx.roundRect(x, y, kw, kh, radius);
+      else ctx.rect(x, y, kw, kh);
+      ctx.fill();
+    }
+  }
+}
+
+function drawStripes(ctx, w, h, spec) {
+  ctx.fillStyle = spec.base || '#8a8e94';
+  ctx.fillRect(0, 0, w, h);
+  const count = clamp(Math.round(num(spec.count, 80)), 2, 400);
+  const horizontal = spec.direction === 'horizontal';
+  ctx.strokeStyle = spec.line || 'rgba(255,255,255,0.09)';
+  ctx.lineWidth = Math.max(1, num(spec.width, 1));
+  for (let i = 0; i < count; i++) {
+    const p = ((i + 0.5) / count) * (horizontal ? h : w);
+    ctx.beginPath();
+    if (horizontal) { ctx.moveTo(0, p); ctx.lineTo(w, p); } else { ctx.moveTo(p, 0); ctx.lineTo(p, h); }
+    ctx.stroke();
+  }
+}
+
+function drawGrid(ctx, w, h, spec) {
+  ctx.fillStyle = spec.base || '#0d131b';
+  ctx.fillRect(0, 0, w, h);
+  const count = clamp(Math.round(num(spec.count, 16)), 2, 120);
+  ctx.strokeStyle = spec.line || 'rgba(120,220,200,0.35)';
+  ctx.lineWidth = Math.max(1, num(spec.width, 1));
+  const step = 1 / count;
+  for (let i = 0; i <= count; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * step * w, 0);
+    ctx.lineTo(i * step * w, h);
+    ctx.moveTo(0, i * step * h);
+    ctx.lineTo(w, i * step * h);
+    ctx.stroke();
+  }
+}
+
+/** Turns a material's texture descriptor into a cached three texture. */
+function buildTexture(def) {
+  const spec = def && def.texture;
+  if (!spec) return null;
+  const repeat = [num(Array.isArray(def.textureRepeat) ? def.textureRepeat[0] : 1, 1),
+    num(Array.isArray(def.textureRepeat) ? def.textureRepeat[1] : 1, 1)];
+  const offset = [num(Array.isArray(def.textureOffset) ? def.textureOffset[0] : 0, 0),
+    num(Array.isArray(def.textureOffset) ? def.textureOffset[1] : 0, 0)];
+  const signature = `${typeof spec === 'string' ? spec : JSON.stringify(spec)}|${repeat.join(',')}|${offset.join(',')}`;
+  if (textureCache.has(signature)) return textureCache.get(signature);
+
+  let texture = null;
+  if (typeof spec === 'string') {
+    if (!/^data:image\//.test(spec)) return null;
+    texture = new THREE.TextureLoader().load(spec);
+  } else if (spec && typeof spec === 'object') {
+    const size = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const kind = String(spec.kind || 'gradient');
+    if (kind === 'keys') drawKeys(ctx, size, size, spec);
+    else if (kind === 'stripes') drawStripes(ctx, size, size, spec);
+    else if (kind === 'grid') drawGrid(ctx, size, size, spec);
+    else drawGradient(ctx, size, size, spec);
+    texture = new THREE.CanvasTexture(canvas);
+  }
+  if (!texture) return null;
+
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(repeat[0], repeat[1]);
+  texture.offset.set(offset[0], offset[1]);
+  texture.anisotropy = 4;
+  texture.needsUpdate = true;
+  textureCache.set(signature, texture);
+  return texture;
+}
+
 function makeMaterial(def) {
   const mat = new THREE.MeshStandardMaterial();
   mat.name = def && def.id ? String(def.id) : 'material';
@@ -1609,6 +1907,11 @@ function makeMaterial(def) {
     applyColor(e, def.emissive);
     mat.emissive.copy(e);
     mat.emissiveIntensity = clamp(num(def.emissiveIntensity, 1), 0, 6);
+  }
+  const map = buildTexture(def);
+  if (map) {
+    mat.map = map;
+    if (!def || def.baseColor === undefined) mat.color.setRGB(1, 1, 1, THREE.SRGBColorSpace);
   }
   return mat;
 }
@@ -2225,6 +2528,7 @@ function renderFormat() {
         <button class="btn small" type="button" data-example="lamp">Table lamp</button>
         <button class="btn small" type="button" data-example="tv">Samsung TV 55"</button>
         <button class="btn small" type="button" data-example="phone">iPhone 18 Pro</button>
+        <button class="btn small" type="button" data-example="macbook">MacBook Pro 14"</button>
       </div>
       ${codeBlock(JSON.stringify(EXAMPLES.lamp, null, 2), 'lamp.gscgeo.json')}
     </div>
@@ -2267,6 +2571,25 @@ function buildJsonSchema() {
         opacity: { type: 'number', minimum: 0, maximum: 1 },
         emissive: { $ref: '#/$defs/color' },
         emissiveIntensity: { type: 'number', minimum: 0, maximum: 6 },
+        texture: {
+          oneOf: [
+            { type: 'string', pattern: '^data:image/' },
+            {
+              type: 'object',
+              required: ['kind'],
+              properties: {
+                kind: { enum: ['gradient', 'keys', 'stripes', 'grid'] },
+                from: { type: 'string' },
+                to: { type: 'string' },
+                angle: { type: 'number' },
+                glows: { type: 'array' },
+              },
+              additionalProperties: true,
+            },
+          ],
+        },
+        textureRepeat: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' } },
+        textureOffset: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' } },
       },
     },
     mirror: {
@@ -2611,6 +2934,7 @@ async function runCompile() {
       setPhase('validate', 'fail');
       log(`Rejected: ${validation.errors} error(s), ${validation.warnings} warning(s). Nothing was built.`, 'error');
       setStatus(`Rejected: ${validation.errors} error(s) — fix the issues listed under the editor.`);
+      hapticFx('compile-fail');
       setProgress(0);
       return;
     }
@@ -2687,6 +3011,7 @@ async function runCompile() {
     setProgress(100);
     log(`Compiled ${resolved.meta.name}: ${fmtInt(built.stats.triangles)} triangles, ${lods.length} LOD(s), ${state.timing.totalMs} ms.`, 'ok');
     setStatus(`Compiled ${fmtInt(built.stats.triangles)} triangles in ${fmtInt(state.timing.totalMs)} ms. Export the GLB when you are happy.`);
+    hapticFx('compile-ok');
     if (isMobileLayout()) {
       setMobileView('model');
       requestAnimationFrame(() => {
@@ -2862,6 +3187,12 @@ function wireUi() {
     setStatus('Editor cleared.');
   });
 
+  const themeBtn = $('#btnTheme');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => {
+      applyTheme(document.body.dataset.theme === 'light' ? 'dark' : 'light');
+    });
+  }
   $('#btnRefresh').addEventListener('click', async () => {
     try {
       if ('serviceWorker' in navigator) {
@@ -2969,6 +3300,7 @@ function registerServiceWorker() {
 }
 
 function init() {
+  try { applyTheme(localStorage.getItem('gsc3d.theme') || 'dark'); } catch (err) { applyTheme('dark'); }
   renderFormat();
   wireUi();
   updateSourceMeta();

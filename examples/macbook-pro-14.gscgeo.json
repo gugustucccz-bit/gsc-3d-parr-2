@@ -1,0 +1,110 @@
+{
+  "format": "gsc-geo",
+  "version": "0.1",
+  "meta": {
+    "name": "macbook-pro-14",
+    "category": "laptop",
+    "units": "mm",
+    "upAxis": "Y",
+    "forwardAxis": "-Z"
+  },
+  "budget": {
+    "targetTriangles": 12000,
+    "lodLevels": 3,
+    "textureResolution": 2048
+  },
+  "materials": [
+    { "id": "alu", "baseColor": [0.62, 0.63, 0.65], "metallic": 1, "roughness": 0.32 },
+    { "id": "black", "baseColor": [0.03, 0.03, 0.035], "metallic": 0.2, "roughness": 0.5 },
+    { "id": "trackpad", "baseColor": [0.5, 0.51, 0.53], "metallic": 0.8, "roughness": 0.22 },
+    { "id": "keys", "baseColor": [0.09, 0.09, 0.1], "metallic": 0.1, "roughness": 0.7, "texture": { "kind": "keys", "cols": 14, "rows": 5, "bg": "#0f1013", "key": "#26262c", "gap": 0.14, "radius": 0.24 } },
+    { "id": "wallpaper", "baseColor": [0.05, 0.05, 0.07], "metallic": 0, "roughness": 0.2, "texture": { "kind": "gradient", "from": "#0b2a4a", "to": "#05080f", "angle": 120, "glows": [{ "x": 0.75, "y": 0.25, "r": 0.5, "color": "#3fa9ff" }, { "x": 0.25, "y": 0.8, "r": 0.45, "color": "#8a5cf6" }] }, "textureRepeat": [0.003311, 0.005102], "textureOffset": [0.5, 0.5] }
+  ],
+  "root": {
+    "id": "macbook-pro-14",
+    "type": "group",
+    "children": [
+      {
+        "id": "base",
+        "type": "extrude",
+        "material": "alu",
+        "rotation": [90, 0, 0],
+        "position": [0, 4.7, 0],
+        "params": {
+          "profile": [
+            [156.3, 98.6], [155.387, 103.192], [152.785, 107.085], [148.892, 109.687], [144.3, 110.6],
+            [-148.892, 109.687], [-152.785, 107.085], [-155.387, 103.192], [-156.3, 98.6],
+            [-155.387, -103.192], [-152.785, -107.085], [-148.892, -109.687], [-144.3, -110.6],
+            [148.892, -109.687], [152.785, -107.085], [155.387, -103.192], [156.3, -98.6]
+          ],
+          "depth": 9.4,
+          "taper": 1
+        }
+      },
+      { "id": "keyboard", "type": "box", "material": "keys", "position": [0, 9.55, 34], "params": { "size": [283, 0.3, 108] } },
+      { "id": "trackpad", "type": "box", "material": "trackpad", "position": [0, 9.5, -58], "params": { "size": [128, 0.25, 80] } },
+      { "id": "hinge", "type": "cylinder", "material": "alu", "position": [0, 9.4, 108], "rotation": [0, 0, 90], "params": { "radiusTop": 3.2, "radiusBottom": 3.2, "height": 280, "radialSegments": 24 } },
+      {
+        "id": "lid",
+        "type": "group",
+        "position": [0, 9.4, 110.6],
+        "rotation": [15, 0, 0],
+        "children": [
+          {
+            "id": "lid-shell",
+            "type": "extrude",
+            "material": "alu",
+            "position": [0, 110.6, 0],
+            "params": {
+              "profile": [
+                [156.3, 98.6], [155.387, 103.192], [152.785, 107.085], [148.892, 109.687], [144.3, 110.6],
+                [-148.892, 109.687], [-152.785, 107.085], [-155.387, 103.192], [-156.3, 98.6],
+                [-155.387, -103.192], [-152.785, -107.085], [-148.892, -109.687], [-144.3, -110.6],
+                [148.892, -109.687], [152.785, -107.085], [155.387, -103.192], [156.3, -98.6]
+              ],
+              "depth": 5.5,
+              "taper": 1
+            }
+          },
+          {
+            "id": "bezel",
+            "type": "extrude",
+            "material": "black",
+            "position": [0, 110.6, -2.85],
+            "params": {
+              "profile": [
+                [155, 92], [154.239, 95.827], [152.071, 99.071], [148.827, 101.239], [145, 102],
+                [-148.827, 101.239], [-152.071, 99.071], [-154.239, 95.827], [-155, 92],
+                [-154.239, -95.827], [-152.071, -99.071], [-148.827, -101.239], [-145, -102],
+                [148.827, -101.239], [152.071, -99.071], [154.239, -95.827], [155, -92]
+              ],
+              "depth": 0.3,
+              "taper": 1
+            }
+          },
+          {
+            "id": "screen",
+            "type": "extrude",
+            "material": "wallpaper",
+            "position": [0, 110.6, -3],
+            "params": {
+              "profile": [
+                [151, 89], [150.315, 92.444], [148.364, 95.364], [145.444, 97.315], [142, 98],
+                [-145.444, 97.315], [-148.364, 95.364], [-150.315, 92.444], [-151, 89],
+                [-150.315, -92.444], [-148.364, -95.364], [-145.444, -97.315], [-142, -98],
+                [145.444, -97.315], [148.364, -95.364], [150.315, -92.444], [151, -89]
+              ],
+              "depth": 0.35,
+              "taper": 1
+            }
+          },
+          { "id": "notch", "type": "box", "material": "black", "position": [0, 206, -3.1], "params": { "size": [26, 5, 0.5] } }
+        ]
+      },
+      { "id": "usb-c-left", "type": "box", "material": "black", "position": [-156.35, 4.7, 60], "params": { "size": [0.6, 3.4, 12] } },
+      { "id": "usb-c-left-2", "type": "box", "material": "black", "position": [-156.35, 4.7, 42], "params": { "size": [0.6, 3.4, 12] } },
+      { "id": "hdmi", "type": "box", "material": "black", "position": [156.35, 4.7, 60], "params": { "size": [0.6, 4, 16] } },
+      { "id": "sdcard", "type": "box", "material": "black", "position": [156.35, 4.7, 36], "params": { "size": [0.6, 3, 14] } }
+    ]
+  }
+}
