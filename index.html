@@ -669,7 +669,7 @@ function setMobileView(view) {
 
 /* ═════════════════════ the format: one definition for everything ═════════════════════ */
 const GEO_VERSION = '0.1';
-const APP_BUILD = 'v0.5';
+const APP_BUILD = 'v0.6';
 const GEO_FORMAT = 'gsc-geo';
 const GEO_LIMITS = { nodes: 400, depth: 12 };
 
@@ -1034,7 +1034,7 @@ const EXAMPLES = {
               id: 'front-glass',
               type: 'extrude',
               material: 'glassFront',
-              position: [0, 0, -3.825],
+              position: [0, 0, -3.875],
               scale: [0.988, 0.9946, 1],
               params: {
                 profile: [
@@ -1051,7 +1051,7 @@ const EXAMPLES = {
               id: 'back-glass',
               type: 'extrude',
               material: 'glassBack',
-              position: [0, 0, 3.825],
+              position: [0, 0, 3.875],
               scale: [0.988, 0.9946, 1],
               params: {
                 profile: [
@@ -1123,17 +1123,17 @@ const EXAMPLES = {
                 taper: 1,
               },
             },
-            { id: 'lens-a-ring', type: 'cylinder', material: 'ring', position: [-22.75, 59.3, 6.35], rotation: [90, 0, 0], params: { radiusTop: 7.5, radiusBottom: 7.5, height: 1.6, radialSegments: 36 } },
+            { id: 'lens-a-ring', type: 'torus', material: 'ring', position: [-22.75, 59.3, 6.35], params: { radius: 6.6, tube: 0.95, radialSegments: 20, tubularSegments: 48 } },
             { id: 'lens-a-glass', type: 'cylinder', material: 'lens', position: [-22.75, 59.3, 6.2], rotation: [90, 0, 0], params: { radiusTop: 5.9, radiusBottom: 5.9, height: 1.2, radialSegments: 36 } },
             { id: 'lens-a-pupil', type: 'cylinder', material: 'lens', position: [-22.75, 59.3, 6.75], rotation: [90, 0, 0], params: { radiusTop: 3.2, radiusBottom: 3.2, height: 0.4, radialSegments: 28 } },
-            { id: 'lens-b-ring', type: 'cylinder', material: 'ring', position: [-22.75, 47.3, 6.35], rotation: [90, 0, 0], params: { radiusTop: 7.5, radiusBottom: 7.5, height: 1.6, radialSegments: 36 } },
+            { id: 'lens-b-ring', type: 'torus', material: 'ring', position: [-22.75, 47.3, 6.35], params: { radius: 6.6, tube: 0.95, radialSegments: 20, tubularSegments: 48 } },
             { id: 'lens-b-glass', type: 'cylinder', material: 'lens', position: [-22.75, 47.3, 6.2], rotation: [90, 0, 0], params: { radiusTop: 5.9, radiusBottom: 5.9, height: 1.2, radialSegments: 36 } },
             { id: 'lens-b-pupil', type: 'cylinder', material: 'lens', position: [-22.75, 47.3, 6.75], rotation: [90, 0, 0], params: { radiusTop: 3.2, radiusBottom: 3.2, height: 0.4, radialSegments: 28 } },
-            { id: 'lens-c-ring', type: 'cylinder', material: 'ring', position: [-7.25, 53.3, 6.35], rotation: [90, 0, 0], params: { radiusTop: 7.5, radiusBottom: 7.5, height: 1.6, radialSegments: 36 } },
+            { id: 'lens-c-ring', type: 'torus', material: 'ring', position: [-7.25, 53.3, 6.35], rotation: [0, 0, 0], params: { radius: 6.6, tube: 0.95, radialSegments: 20, tubularSegments: 48 } },
             { id: 'lens-c-glass', type: 'cylinder', material: 'lens', position: [-7.25, 53.3, 6.2], rotation: [90, 0, 0], params: { radiusTop: 5.9, radiusBottom: 5.9, height: 1.2, radialSegments: 36 } },
             { id: 'lens-c-pupil', type: 'cylinder', material: 'lens', position: [-7.25, 53.3, 6.75], rotation: [90, 0, 0], params: { radiusTop: 3.2, radiusBottom: 3.2, height: 0.4, radialSegments: 28 } },
             { id: 'flash', type: 'cylinder', material: 'flash', position: [-3.25, 64.3, 5.85], rotation: [90, 0, 0], params: { radiusTop: 2.4, radiusBottom: 2.4, height: 0.7, radialSegments: 24 } },
-            { id: 'lidar', type: 'cylinder', material: 'black', position: [-3.25, 42.3, 5.85], rotation: [90, 0, 0], params: { radiusTop: 1.8, radiusBottom: 1.8, height: 0.6, radialSegments: 20 } },
+            { id: 'lidar', type: 'cylinder', material: 'black', position: [-3.25, 42.3, 5.6], rotation: [90, 0, 0], params: { radiusTop: 1.8, radiusBottom: 1.8, height: 0.6, radialSegments: 20 } },
           ],
         },
         {

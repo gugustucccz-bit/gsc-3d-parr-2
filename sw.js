@@ -1,7 +1,7 @@
 /* GSC 3D parr 2 — offline shell.
    Caches the compiler and its vendored 3D engine on first visit, so the site
    keeps working from the Home Screen with no network. */
-const CACHE = 'gsc-3d-parr-2-v6';
+const CACHE = 'gsc-3d-parr-2-v7';
 const ASSETS = [
   './',
   './index.html',
