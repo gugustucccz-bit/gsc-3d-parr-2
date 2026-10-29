@@ -446,6 +446,7 @@ table.specTable code{color:var(--accent)}
         <li data-phase="lod"><span class="dot"></span>Build LOD chain</li>
         <li data-phase="report"><span class="dot"></span>Report</li>
       </ul>
+      <p class="hint" id="buildTag">build —</p>
     </section>
 
     <section class="card">
@@ -664,6 +665,7 @@ function setMobileView(view) {
 
 /* ═════════════════════ the format: one definition for everything ═════════════════════ */
 const GEO_VERSION = '0.1';
+const APP_BUILD = 'v0.3';
 const GEO_FORMAT = 'gsc-geo';
 const GEO_LIMITS = { nodes: 400, depth: 12 };
 
@@ -2887,12 +2889,22 @@ function wireUi() {
 }
 
 /* ═════════════════════ boot ═════════════════════ */
-/** Keeps the compiler usable offline once it has been opened from its URL. */
+/** Keeps the compiler usable offline once it has been opened from its URL, and
+ *  reloads once when a new build takes over so an update cannot get stuck. */
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
   if (!/^https?:$/.test(location.protocol)) return;
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./sw.js').catch(() => { /* offline install is optional */ });
+    navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then((registration) => {
+      registration.update().catch(() => {});
+    }).catch(() => { /* offline install is optional */ });
+
+    let reloading = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (reloading) return;
+      reloading = true;
+      location.reload();
+    });
   });
 }
 
@@ -2903,6 +2915,9 @@ function init() {
   refreshControls();
   setProgress(0);
   log('GSC-GEO compiler ready — paste a blueprint and press Compile (or ⌘/Ctrl + Enter).');
+  const buildTag = $('#buildTag');
+  if (buildTag) buildTag.textContent = `build ${APP_BUILD} · ${Object.keys(EXAMPLES).length} examples`;
+  log(`build ${APP_BUILD} · ${Object.keys(EXAMPLES).length} examples loaded.`, 'ok');
   if (isMobileLayout()) setMobileView('model');
   loadExample('minimal', { compile: true });
   registerServiceWorker();

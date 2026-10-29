@@ -30,9 +30,11 @@ Deploy from a branch → `main` / `/ (root)` → Save**. The site then lives at
 
 The page is a PWA. Open that URL in Safari, tap **Share → Add to Home Screen**, and it launches
 full screen like an app. The service worker (`sw.js`) caches the compiler and the vendored 3D
-engine on that first visit, so from then on it starts and compiles with no network at all. The
-navigation request is fetched fresh and the other assets are revalidated in the background, so
-a new deploy is picked up on the next launch — no cache bump needed. iOS builds the Home Screen
+engine on that first visit, so from then on it starts and compiles with no network at all. Every
+launch asks for the newest HTML with the HTTP cache bypassed, the other assets are revalidated in
+the background, and a new worker reloads the page once — so a deploy shows up on its own. The
+compile card prints the **build** it is running (`v0.3 · 6 examples`); if that line is missing you
+are looking at a cached copy, so reload or reopen the Home Screen app. iOS builds the Home Screen
 icon from a page screenshot because the repository has no raster icon; drop a 180×180 PNG at the
 root and link it as `apple-touch-icon` if you want a custom one.
 

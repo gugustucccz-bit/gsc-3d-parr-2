@@ -1,7 +1,7 @@
 /* GSC 3D parr 2 — offline shell.
    Caches the compiler and its vendored 3D engine on first visit, so the site
    keeps working from the Home Screen with no network. */
-const CACHE = 'gsc-3d-parr-2-v3';
+const CACHE = 'gsc-3d-parr-2-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -36,8 +36,9 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === 'navigate') {
+    // no-store skips the browser HTTP cache, so a fresh deploy is seen at once.
     event.respondWith(
-      fetch(request)
+      fetch(request, { cache: 'no-store' })
         .then((response) => {
           const copy = response.clone();
           caches.open(CACHE).then((cache) => cache.put(request, copy));
