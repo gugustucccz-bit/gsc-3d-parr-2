@@ -20,6 +20,19 @@ bar at the bottom of the screen, which also carries **Compile** (in the editor) 
 GLB** (in the model view). Compiling on a phone jumps straight to the model, the viewer refits
 to the portrait aspect, and the format reference reflows its tables into stacked rows.
 
+## Install it on the iPhone
+
+The page is a PWA. Open the published URL in Safari, tap **Share → Add to Home Screen**, and it
+launches full screen like an app. The service worker (`sw.js`) caches the compiler and the
+vendored 3D engine on that first visit, so from then on it starts and compiles with no network
+at all; add `?v=2` style cache busting only if you change the vendored files, or bump `CACHE`
+in `sw.js`. iOS builds the Home Screen icon from a page screenshot because the repository has
+no raster icon — drop a 180×180 PNG at the root and link it as `apple-touch-icon` if you want a
+custom one.
+
+For a fully local run with no hosting, the app's **Run** button serves these same files inside
+this app's web view.
+
 ## The compile pipeline
 
 1. **Parse** — `JSON.parse` with the error position translated to line and column.

@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
 <title>GSC 3D parr 2 — GSC-GEO compiler</title>
+<link rel="manifest" href="./site.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#070b10">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GSC 3D">
 <style>
 *,*::before,*::after{box-sizing:border-box}
 :root{
@@ -267,7 +274,7 @@ table.specTable code{color:var(--accent)}
     overflow:hidden;
     grid-template-rows:auto minmax(0,1fr) auto auto;
   }
-  .topbar{padding:8px 12px;gap:10px}
+  .topbar{padding:calc(8px + env(safe-area-inset-top)) 12px 8px;gap:10px}
   .mark{width:32px;height:32px;border-radius:9px;font-size:10px}
   .brandtext h1{font-size:14px}
   .brandtext p{display:none}
@@ -2678,6 +2685,15 @@ function wireUi() {
 }
 
 /* ═════════════════════ boot ═════════════════════ */
+/** Keeps the compiler usable offline once it has been opened from its URL. */
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (!/^https?:$/.test(location.protocol)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => { /* offline install is optional */ });
+  });
+}
+
 function init() {
   renderFormat();
   wireUi();
@@ -2687,6 +2703,7 @@ function init() {
   log('GSC-GEO compiler ready — paste a blueprint and press Compile (or ⌘/Ctrl + Enter).');
   if (isMobileLayout()) setMobileView('model');
   loadExample('minimal', { compile: true });
+  registerServiceWorker();
 }
 
 init();
