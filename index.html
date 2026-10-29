@@ -1,0 +1,2695 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>GSC 3D parr 2 — GSC-GEO compiler</title>
+<style>
+*,*::before,*::after{box-sizing:border-box}
+:root{
+  --bg:#070b10;
+  --bg2:#0a1017;
+  --panel:#0d141c;
+  --panel2:#131d28;
+  --line:#1c2734;
+  --line2:#2b3d52;
+  --text:#dce6f2;
+  --muted:#7b8ea4;
+  --accent:#2ee6b6;
+  --blue:#3d8bfd;
+  --warn:#f2b544;
+  --err:#ff6d6d;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+  --r:14px;
+}
+html,body{margin:0;padding:0;height:100%}
+body{
+  background:radial-gradient(1100px 560px at 82% -12%,#10262f 0%,var(--bg) 62%) fixed;
+  color:var(--text);
+  font-family:var(--sans);
+  font-size:13.5px;
+  line-height:1.45;
+  display:grid;
+  grid-template-rows:auto minmax(0,1fr) auto;
+  grid-template-columns:minmax(0,1fr);
+  height:100vh;
+  overflow:hidden;
+}
+h1,h2,h3,h4{margin:0;font-weight:600}
+p{margin:0}
+code{font-family:var(--mono);font-size:0.92em;color:var(--accent)}
+
+/* ---------- top bar ---------- */
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+  padding:10px 16px;border-bottom:1px solid var(--line);
+  background:rgba(8,12,17,0.78);
+}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}
+.mark{
+  width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
+  font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.5px;
+  color:#04120e;background:linear-gradient(135deg,var(--accent),#3ddcfd);
+  box-shadow:0 0 22px rgba(46,230,182,.35);flex:0 0 auto;
+}
+.brandtext{min-width:0}
+.brandtext h1{font-size:15px;letter-spacing:.2px;white-space:nowrap}
+.brandtext h1 span{color:var(--accent);font-weight:700}
+.brandtext p{color:var(--muted);font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topactions{display:flex;align-items:center;gap:8px}
+.pill{
+  font-family:var(--mono);font-size:11px;padding:5px 10px;border-radius:999px;
+  border:1px solid var(--line);color:var(--muted);background:var(--panel);white-space:nowrap;
+}
+.pill strong{color:var(--accent);font-weight:600}
+
+/* ---------- buttons & inputs ---------- */
+.btn{
+  font-family:var(--sans);font-size:12.5px;font-weight:600;
+  border-radius:10px;border:1px solid var(--line);background:var(--panel2);
+  color:var(--text);padding:8px 12px;cursor:pointer;
+  transition:background .15s,border-color .15s,transform .1s,opacity .15s;
+}
+.btn:hover:not(:disabled){border-color:var(--line2);background:#18232f}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn:disabled{opacity:.42;cursor:not-allowed}
+.btn.primary{background:linear-gradient(135deg,var(--accent),#25c9d8);border-color:transparent;color:#04120e}
+.btn.primary:hover:not(:disabled){background:linear-gradient(135deg,#4df0c5,#3fd9e8)}
+.btn.ghost{background:transparent}
+.btn.small{padding:5px 8px;font-size:11px;border-radius:8px}
+.btn.big{padding:11px 14px;font-size:13.5px}
+.spacer{flex:1 1 auto}
+
+textarea,input,select{
+  width:100%;font-family:var(--sans);font-size:12.5px;color:var(--text);
+  background:#080e14;border:1px solid var(--line);border-radius:9px;
+  padding:7px 9px;outline:none;
+}
+textarea:focus,input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(46,230,182,.12)}
+select{appearance:none;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 14px) 52%,calc(100% - 9px) 52%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:26px}
+label{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);letter-spacing:.03em}
+
+/* ---------- layout ---------- */
+main{display:grid;grid-template-columns:392px minmax(0,1fr);min-height:0}
+.sidebar{overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:10px;min-height:0}
+.card{
+  border:1px solid var(--line);border-radius:var(--r);
+  background:linear-gradient(180deg,#101a24,#0b1118);
+  padding:12px;display:flex;flex-direction:column;gap:9px;
+}
+.card h2{
+  font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  display:flex;align-items:center;gap:8px;font-weight:700;
+}
+.card h2::after{content:"";flex:1;height:1px;background:var(--line)}
+.hint{color:var(--muted);font-size:11.5px;line-height:1.5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.btnRow{display:flex;gap:8px;flex-wrap:wrap}
+.btnRow .btn{flex:1 1 0;white-space:nowrap}
+
+/* ---------- editor ---------- */
+.editorWrap{position:relative;display:flex}
+#source{
+  height:320px;min-height:160px;resize:vertical;
+  font-family:var(--mono);font-size:11.5px;line-height:1.55;
+  background:#060b10;border-color:var(--line);tab-size:2;white-space:pre;
+}
+#source.over{border-color:var(--accent);box-shadow:0 0 0 2px rgba(46,230,182,.16)}
+.sourceMeta{font-family:var(--mono);font-size:10.5px;color:#5d7186}
+.issues{
+  border:1px solid var(--line);border-radius:9px;background:#0a0f15;
+  max-height:180px;overflow:auto;padding:6px 8px;display:flex;flex-direction:column;gap:3px;
+}
+.issues[hidden]{display:none}
+.issue{font-family:var(--mono);font-size:10.5px;display:flex;gap:6px;align-items:baseline}
+.issue .marker{flex:0 0 auto;font-weight:700}
+.issue.error{color:var(--err)}
+.issue.warning{color:var(--warn)}
+.issue .path{color:#6d8299;flex:0 0 auto;max-width:44%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ---------- phases ---------- */
+.phases{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px}
+.phases li{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.phases .dot{width:8px;height:8px;border-radius:50%;background:#243343;flex:0 0 auto;transition:background .2s,box-shadow .2s}
+.phases li[data-state="run"]{color:var(--text)}
+.phases li[data-state="run"] .dot{background:var(--blue);box-shadow:0 0 0 3px rgba(61,139,253,.18);animation:pulse 1.1s ease-in-out infinite}
+.phases li[data-state="done"]{color:#a9c7bd}
+.phases li[data-state="done"] .dot{background:var(--accent)}
+.phases li[data-state="fail"]{color:var(--err)}
+.phases li[data-state="fail"] .dot{background:var(--err)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ---------- stats ---------- */
+.statGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.statGrid div{border:1px solid var(--line);border-radius:9px;background:#0a1117;padding:5px 8px;display:flex;flex-direction:column;gap:1px}
+.statGrid span{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.statGrid b{font-family:var(--mono);font-size:12px;color:#cfe0ef;font-weight:600}
+
+/* ---------- stage / viewer ---------- */
+.stage{display:flex;flex-direction:column;min-width:0;min-height:0;border-left:1px solid var(--line)}
+.viewerWrap{position:relative;flex:1 1 auto;min-height:200px;overflow:hidden;background:#050a0e}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.hud{position:absolute;top:10px;right:10px;display:flex;gap:6px;pointer-events:none}
+.hud div{
+  background:rgba(6,11,16,.76);border:1px solid var(--line);border-radius:8px;
+  padding:4px 8px;font-family:var(--mono);font-size:10.5px;display:flex;flex-direction:column;gap:1px;min-width:54px;
+}
+.hud em{color:var(--muted);font-style:normal;font-size:9px;letter-spacing:.09em;text-transform:uppercase}
+.hud b{color:var(--accent);font-weight:600;font-size:11.5px}
+.viewerTools{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+  background:rgba(6,11,16,.78);border:1px solid var(--line);color:var(--muted);
+  border-radius:999px;padding:5px 10px;cursor:pointer;
+}
+.chip:hover{color:var(--text);border-color:var(--line2)}
+.chip[data-on="1"]{color:#04120e;background:var(--accent);border-color:transparent;font-weight:700}
+.hudSelect{
+  display:flex;flex-direction:row;align-items:center;gap:6px;font-family:var(--mono);font-size:10.5px;
+  letter-spacing:.05em;text-transform:uppercase;color:var(--muted);
+  background:rgba(6,11,16,.78);border:1px solid var(--line);border-radius:999px;padding:3px 6px 3px 10px;
+}
+.hudSelect select{width:auto;padding:2px 18px 2px 4px;border:none;background-color:transparent;font-family:var(--mono);font-size:10.5px;color:var(--text)}
+.hudSelect select:focus{box-shadow:none}
+.viewNotice{
+  position:absolute;inset:auto 0 50% 0;text-align:center;color:var(--muted);font-size:12.5px;
+  pointer-events:none;padding:0 24px;
+}
+.viewNotice[hidden]{display:none}
+
+/* ---------- tabs & panels ---------- */
+.tabs{display:flex;gap:4px;padding:6px 8px 0;border-top:1px solid var(--line);background:var(--bg2)}
+.tab{
+  font-family:var(--sans);font-size:11.5px;font-weight:600;color:var(--muted);
+  background:transparent;border:1px solid transparent;border-bottom:none;
+  padding:6px 12px;border-radius:9px 9px 0 0;cursor:pointer;
+}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);background:var(--panel);border-color:var(--line)}
+.panels{flex:0 0 40%;display:flex;background:var(--panel);min-height:180px}
+.panel{display:none;flex:1 1 auto;min-height:0;min-width:0;overflow:auto;padding:10px 12px}
+.panel.active{display:flex;flex-direction:column;gap:9px}
+.panelBar{display:flex;align-items:center;gap:6px;flex:0 0 auto;flex-wrap:wrap}
+pre.output{
+  margin:0;font-family:var(--mono);font-size:10.5px;line-height:1.55;color:#9fb6cc;
+  background:#060b10;border:1px solid var(--line);border-radius:10px;padding:10px;
+  overflow:auto;flex:1 1 auto;
+}
+.log{font-family:var(--mono);font-size:11.5px;display:flex;flex-direction:column;gap:2px}
+.logline{display:flex;gap:8px;white-space:pre-wrap;word-break:break-word}
+.logline .t{color:#41566e;flex:0 0 auto}
+.logline.info .m{color:#c3d2e2}
+.logline.warn .m{color:var(--warn)}
+.logline.error .m{color:var(--err)}
+.logline.ok .m{color:var(--accent)}
+
+/* ---------- report ---------- */
+.report{display:flex;flex-direction:column;gap:10px}
+.reportHead h3{font-size:14px}
+.reportGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:6px}
+.kv{border:1px solid var(--line);border-radius:9px;padding:6px 9px;background:#0a1117;display:flex;flex-direction:column;gap:2px}
+.kv span{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.kv b{font-family:var(--mono);font-size:11.5px;font-weight:600;color:#cfe0ef}
+.kv em{font-style:normal;color:var(--muted)}
+.report h4{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+
+/* ---------- format documentation ---------- */
+.docSection{display:flex;flex-direction:column;gap:8px}
+.docSection + .docSection{margin-top:14px}
+.docSection h3{
+  font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);
+  display:flex;align-items:center;gap:8px;
+}
+.docSection h3::after{content:"";flex:1;height:1px;background:var(--line)}
+.codeWrap{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#060b10}
+.codeHead{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;padding:4px 8px;
+  background:#0b131b;border-bottom:1px solid var(--line);font-family:var(--mono);
+  font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;
+}
+pre.code{margin:0;padding:9px 10px;font-family:var(--mono);font-size:10.5px;line-height:1.55;color:#a8bfd4;overflow:auto;max-height:340px}
+.copyBtn{font-family:var(--mono);font-size:10px;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:2px 7px;cursor:pointer}
+.copyBtn:hover{color:var(--text);border-color:var(--line2)}
+.specCard{border:1px solid var(--line);border-radius:12px;padding:10px;background:#0a1117;display:flex;flex-direction:column;gap:8px}
+.specCard h4{font-size:12px;font-family:var(--mono);color:var(--accent)}
+table.specTable{width:100%;border-collapse:collapse;font-size:11px}
+table.specTable th{
+  text-align:left;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);font-weight:600;padding:3px 6px;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+table.specTable td{padding:4px 6px;border-bottom:1px solid #131c26;vertical-align:top;color:#c2d3e2}
+table.specTable tr:last-child td{border-bottom:none}
+table.specTable td:nth-child(2),table.specTable td:nth-child(3){font-family:var(--mono);font-size:10px;color:#8fa7bd;white-space:nowrap}
+table.specTable code{color:var(--accent)}
+.req{font-size:8.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--warn);border:1px solid rgba(242,181,68,.4);border-radius:4px;padding:0 3px;margin-left:4px}
+.exampleRow{display:flex;gap:6px;flex-wrap:wrap}
+
+/* ---------- footer ---------- */
+.statusbar{
+  display:flex;align-items:center;gap:12px;padding:7px 14px;border-top:1px solid var(--line);
+  background:rgba(8,12,17,.9);font-size:11.5px;color:var(--muted);
+}
+.statusText{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progress{width:130px;height:4px;border-radius:999px;background:#16202c;overflow:hidden;flex:0 0 auto}
+.progress > div{height:100%;width:0%;background:linear-gradient(90deg,var(--accent),var(--blue));transition:width .3s ease}
+.statusMeta{font-family:var(--mono);font-size:10.5px;color:#41566e;flex:0 0 auto}
+
+/* ---------- phone layout ---------- */
+.mobilebar{display:none}
+@media (max-width: 900px){
+  html,body{height:100%}
+  body{
+    height:100vh;
+    height:100dvh;
+    min-height:100dvh;
+    overflow:hidden;
+    grid-template-rows:auto minmax(0,1fr) auto auto;
+  }
+  .topbar{padding:8px 12px;gap:10px}
+  .mark{width:32px;height:32px;border-radius:9px;font-size:10px}
+  .brandtext h1{font-size:14px}
+  .brandtext p{display:none}
+  .pill{display:none}
+
+  main{grid-template-columns:1fr;min-height:0;overflow:hidden}
+  .sidebar{overflow-y:auto;padding:10px;gap:8px;min-height:0;height:100%}
+  .card{padding:10px;gap:8px;border-radius:12px}
+  .stage{height:100%;min-height:0;border-left:none;border-top:none}
+  body[data-view="edit"] .stage{display:none}
+  body[data-view="model"] .sidebar{display:none}
+
+  .mobilebar{
+    display:flex;align-items:center;gap:8px;padding:8px 10px;
+    background:rgba(8,12,17,.94);border-top:1px solid var(--line);
+  }
+  .seg{display:flex;flex:1 1 auto;gap:4px;background:#0b131b;border:1px solid var(--line);border-radius:11px;padding:3px}
+  .seg button{
+    flex:1 1 0;font-family:var(--sans);font-size:12.5px;font-weight:600;color:var(--muted);
+    background:transparent;border:none;border-radius:8px;padding:8px 6px;min-height:38px;cursor:pointer;
+  }
+  .seg button[aria-selected="true"]{background:var(--panel2);color:var(--text);box-shadow:inset 0 1px 0 #223143}
+  #btnCompileBar{flex:0 0 auto;min-width:108px}
+
+  .btn{min-height:42px;padding:10px 12px;font-size:13px}
+  .btn.small{min-height:36px;font-size:12px;padding:7px 9px}
+  .chip{min-height:34px;padding:7px 11px}
+  .tab{padding:9px 12px;font-size:12px}
+  label{font-size:11.5px}
+  input,select,textarea{font-size:16px}
+  #source{height:34vh;min-height:170px;font-size:16px;line-height:1.4}
+
+  .panelBar{gap:6px}
+  .panels{flex:0 0 40%;min-height:140px;min-width:0}
+  .panel{padding:8px 10px}
+  #formatBody,.docSection,.specCard,.report{min-width:0}
+  pre.output{font-size:11.5px}
+
+  .hud{gap:4px;top:8px;right:8px}
+  .hud div{min-width:46px;padding:3px 6px;font-size:9.5px}
+  .hud em{font-size:8px}
+  .hud b{font-size:10.5px}
+  .viewerTools{left:8px;bottom:8px;gap:5px}
+
+  .statusbar{padding:6px 12px;padding-bottom:calc(6px + env(safe-area-inset-bottom));font-size:11px}
+  .statusMeta{display:none}
+  .progress{width:80px}
+
+  /* documentation tables become stacked rows */
+  table.specTable{display:block;width:100%}
+  table.specTable tbody{display:block}
+  table.specTable thead{display:none}
+  table.specTable tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:1px 8px;padding:6px 2px;border-bottom:1px solid #131c26}
+  table.specTable td{border:none;padding:0;white-space:normal;overflow-wrap:anywhere}
+  table.specTable td:nth-child(1){grid-column:1}
+  table.specTable td:nth-child(2){grid-column:2;text-align:right;white-space:nowrap}
+  table.specTable td:nth-child(3){grid-column:1/-1;font-size:10px;color:#6d8299}
+  table.specTable td:nth-child(3)::before{content:"default ";text-transform:uppercase;letter-spacing:.06em;font-size:9px;color:#41566e}
+  table.specTable td:nth-child(4){grid-column:1/-1;font-size:11.5px}
+
+  pre.code{font-size:10px;max-height:260px}
+  .codeHead{font-size:9.5px}
+  .copyBtn{min-height:28px;padding:4px 9px}
+  .specCard{padding:9px}
+  .docSection + .docSection{margin-top:12px}
+  dialog{max-width:94vw}
+}
+@media (max-width: 560px){
+  #source{height:32vh}
+}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="mark">GSC</div>
+    <div class="brandtext">
+      <h1>GSC 3D <span>parr 2</span></h1>
+      <p>GSC-GEO compiler — a JSON blueprint goes in, a game-ready mesh comes out</p>
+    </div>
+  </div>
+  <div class="topactions">
+    <span class="pill">GSC-GEO <strong>v0.1</strong> · JSON → mesh</span>
+  </div>
+</header>
+
+<main>
+  <aside class="sidebar">
+
+    <section class="card">
+      <h2>1 · Blueprint JSON</h2>
+      <div class="panelBar">
+        <button id="btnLoadFile" class="btn small" type="button">Load .json</button>
+        <input id="fileInput" type="file" accept=".json,application/json,text/plain" hidden>
+        <select id="exampleSelect" style="flex:1 1 120px;min-width:110px">
+          <option value="">Load example…</option>
+          <option value="minimal">Minimal cube</option>
+          <option value="crate">Wooden crate</option>
+          <option value="car">Sports car</option>
+          <option value="lamp">Table lamp</option>
+          <option value="tv">Samsung TV 55"</option>
+        </select>
+        <button id="btnBeautify" class="btn small ghost" type="button">Tidy</button>
+        <button id="btnClear" class="btn small ghost" type="button">Clear</button>
+      </div>
+      <div class="editorWrap">
+        <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder='Paste a GSC-GEO blueprint here, or drop a .json file.
+
+{
+  "format": "gsc-geo",
+  "version": "0.1",
+  "materials": [{ "id": "surface", "baseColor": [0.75, 0.78, 0.82] }],
+  "root": {
+    "id": "root",
+    "type": "group",
+    "children": [
+      { "id": "cube", "type": "box", "material": "surface",
+        "position": [0, 0.5, 0], "params": { "size": [1, 1, 1] } }
+    ]
+  }
+}'></textarea>
+      </div>
+      <div class="sourceMeta" id="sourceMeta">empty document</div>
+      <div class="issues" id="issuesBox" hidden></div>
+    </section>
+
+    <section class="card">
+      <h2>2 · Compile</h2>
+      <div class="grid2">
+        <label>Quality
+          <select id="quality">
+            <option value="preview">Preview</option>
+            <option value="game" selected>Game ready</option>
+            <option value="high">High</option>
+          </select>
+        </label>
+        <label>Triangle cap
+          <input id="capTris" type="number" min="0" max="500000" step="500" value="0" placeholder="0 = from blueprint">
+        </label>
+        <label>LOD levels
+          <input id="lodLevels" type="number" min="0" max="6" step="1" value="0" placeholder="0 = from blueprint">
+        </label>
+        <label>Grid
+          <select id="gridToggle">
+            <option value="on" selected>Show</option>
+            <option value="off">Hide</option>
+          </select>
+        </label>
+      </div>
+      <button id="btnCompile" class="btn primary big" type="button">Compile</button>
+      <p class="hint">⌘ / Ctrl + Enter compiles. Options at 0 fall back to the blueprint's own <code>budget</code>.</p>
+      <ul class="phases" id="phases">
+        <li data-phase="parse"><span class="dot"></span>Parse JSON</li>
+        <li data-phase="validate"><span class="dot"></span>Validate GSC-GEO schema</li>
+        <li data-phase="geometry"><span class="dot"></span>Build geometry within budget</li>
+        <li data-phase="lod"><span class="dot"></span>Build LOD chain</li>
+        <li data-phase="report"><span class="dot"></span>Report</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>3 · Asset</h2>
+      <div class="statGrid">
+        <div><span>triangles</span><b id="statTris">—</b></div>
+        <div><span>vertices</span><b id="statVerts">—</b></div>
+        <div><span>meshes</span><b id="statMeshes">—</b></div>
+        <div><span>materials</span><b id="statMaterials">—</b></div>
+        <div><span>size (m)</span><b id="statSize">—</b></div>
+        <div><span>build time</span><b id="statTime">—</b></div>
+      </div>
+      <div class="btnRow">
+        <button id="btnGlb" class="btn" type="button" disabled>Export GLB</button>
+        <button id="btnNormalized" class="btn" type="button" disabled>Normalized JSON</button>
+      </div>
+    </section>
+
+  </aside>
+
+  <section class="stage">
+    <div class="viewerWrap">
+      <canvas id="view"></canvas>
+      <div class="hud">
+        <div><em>tris</em><b id="hudTris">—</b></div>
+        <div><em>verts</em><b id="hudVerts">—</b></div>
+        <div><em>meshes</em><b id="hudMeshes">—</b></div>
+        <div><em>fps</em><b id="hudFps">—</b></div>
+      </div>
+      <div class="viewerTools">
+        <button class="chip" id="btnFit" type="button">Fit</button>
+        <button class="chip" id="chipWire" type="button" data-on="0">Wireframe</button>
+        <button class="chip" id="chipSpin" type="button" data-on="0">Turntable</button>
+        <label class="hudSelect">LOD
+          <select id="lodSelect"><option value="0">0</option></select>
+        </label>
+      </div>
+      <div class="viewNotice" id="viewNotice">Paste a blueprint and press Compile.</div>
+    </div>
+
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="format" type="button" role="tab">Format</button>
+      <button class="tab" data-tab="report" type="button" role="tab">Report</button>
+      <button class="tab" data-tab="output" type="button" role="tab">Normalized</button>
+      <button class="tab" data-tab="log" type="button" role="tab">Log</button>
+    </div>
+
+    <div class="panels">
+      <div class="panel active" id="panel-format">
+        <div class="panelBar">
+          <button id="btnSchema" class="btn small ghost" type="button">Download JSON Schema</button>
+          <span class="spacer"></span>
+          <span class="hint">Generated from the same definition the compiler validates with.</span>
+        </div>
+        <div id="formatBody"></div>
+      </div>
+      <div class="panel" id="panel-report">
+        <div class="panelBar">
+          <button id="btnReportJson" class="btn small ghost" type="button">Download .json</button>
+          <button id="btnReportMd" class="btn small ghost" type="button">Download .md</button>
+          <span class="spacer"></span>
+          <span class="hint">Compile once to fill this in.</span>
+        </div>
+        <div id="reportBody" class="report"><p class="hint">No report yet.</p></div>
+      </div>
+      <div class="panel" id="panel-output">
+        <div class="panelBar">
+          <button id="btnCopyOutput" class="btn small ghost" type="button">Copy</button>
+          <button id="btnDownloadOutput" class="btn small ghost" type="button">Download .gscgeo.json</button>
+          <span class="spacer"></span>
+          <span class="hint">What the compiler actually builds: every default filled in.</span>
+        </div>
+        <pre class="output" id="outputBody">Nothing compiled yet.</pre>
+      </div>
+      <div class="panel" id="panel-log">
+        <div id="logBody" class="log"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<nav class="mobilebar" id="mobileBar" aria-label="Workspace view">
+  <div class="seg" role="tablist" aria-label="Switch between the editor and the model">
+    <button type="button" data-view="edit" role="tab" aria-selected="false">Editor</button>
+    <button type="button" data-view="model" role="tab" aria-selected="true">Model</button>
+  </div>
+  <button id="btnCompileBar" class="btn primary" type="button" data-action="compile">Compile</button>
+</nav>
+
+<footer class="statusbar">
+  <div class="statusText" id="statusText">Ready.</div>
+  <div class="progress"><div id="progressBar"></div></div>
+  <div class="statusMeta" id="statusMeta">local · no backend</div>
+</footer>
+
+<noscript><p style="padding:20px">GSC 3D parr 2 needs JavaScript and WebGL.</p></noscript>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module">
+/* ══════════════════════════════════════════════════════════════════════
+   GSC 3D parr 2 — GSC-GEO compiler
+   JSON blueprint in → validated, tessellated, LOD'd GLB out.
+   NODE_SPEC is the single source of truth: the validator, the
+   normalized output, the format reference and the downloadable JSON
+   Schema are all derived from it.
+   ══════════════════════════════════════════════════════════════════════ */
+import * as THREE from 'three';
+import { OrbitControls } from './vendor/controls/OrbitControls.js';
+import { GLTFExporter } from './vendor/exporters/GLTFExporter.js';
+
+/* ───────────────────────── helpers ───────────────────────── */
+const $ = (sel, root = document) => root.querySelector(sel);
+const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
+const num = (v, d = 0) => {
+  const n = typeof v === 'number' ? v : parseFloat(v);
+  return Number.isFinite(n) ? n : d;
+};
+const int = (v, d = 0) => Math.round(num(v, d));
+const deg = (d) => (d * Math.PI) / 180;
+const fmtInt = (v) => new Intl.NumberFormat('en-US').format(Math.round(num(v, 0)));
+const fmtNum = (v, p = 2) => (Number.isFinite(v) ? v.toFixed(p) : '—');
+const slug = (s) => String(s || 'gsc-asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'gsc-asset';
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const vec3 = (v, fallback) => (Array.isArray(v) && v.length >= 3
+  ? [num(v[0], fallback[0]), num(v[1], fallback[1]), num(v[2], fallback[2])]
+  : fallback.slice());
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const r4 = (v) => +num(v, 0).toFixed(4);
+
+/* ───────────────────────── log & status ───────────────────────── */
+function log(message, kind = 'info') {
+  const box = $('#logBody');
+  if (!box) return;
+  const row = document.createElement('div');
+  row.className = `logline ${kind}`;
+  const t = document.createElement('span');
+  t.className = 't';
+  t.textContent = new Date().toLocaleTimeString('en-GB', { hour12: false });
+  const m = document.createElement('span');
+  m.className = 'm';
+  m.textContent = String(message);
+  row.append(t, m);
+  box.appendChild(row);
+  while (box.children.length > 400) box.removeChild(box.firstChild);
+  box.scrollTop = box.scrollHeight;
+  if (kind === 'error') setStatus(String(message));
+}
+
+function setStatus(text) {
+  const el = $('#statusText');
+  if (el) el.textContent = text;
+}
+
+function setProgress(pct) {
+  const el = $('#progressBar');
+  if (el) el.style.width = `${clamp(num(pct, 0), 0, 100)}%`;
+}
+
+function setPhase(id, stateName) {
+  const li = $(`#phases li[data-phase="${id}"]`);
+  if (li) li.dataset.state = stateName;
+}
+
+function resetPhases() {
+  document.querySelectorAll('#phases li').forEach((li) => { delete li.dataset.state; });
+}
+
+/* ───────────────────────── phone layout ───────────────────────── */
+const MOBILE_QUERY = window.matchMedia ? window.matchMedia('(max-width: 900px)') : null;
+
+function isMobileLayout() {
+  return !!(MOBILE_QUERY && MOBILE_QUERY.matches);
+}
+
+function currentMobileView() {
+  return document.body.dataset.view === 'edit' ? 'edit' : 'model';
+}
+
+function updateMobileBar() {
+  const button = $('#btnCompileBar');
+  if (!button) return;
+  document.querySelectorAll('.seg button').forEach((btn) => {
+    btn.setAttribute('aria-selected', btn.dataset.view === currentMobileView() ? 'true' : 'false');
+  });
+  if (currentMobileView() === 'edit') {
+    button.textContent = state.busy ? 'Working…' : 'Compile';
+    button.disabled = state.busy;
+    button.dataset.action = 'compile';
+  } else {
+    button.textContent = 'Export GLB';
+    button.disabled = state.busy || state.lods.length === 0;
+    button.dataset.action = 'export';
+  }
+}
+
+let pendingFitOnShow = false;
+
+function setMobileView(view) {
+  document.body.dataset.view = view === 'edit' ? 'edit' : 'model';
+  updateMobileBar();
+  requestAnimationFrame(() => {
+    if (currentMobileView() === 'model') {
+      viewer.resize();
+      if (pendingFitOnShow) {
+        pendingFitOnShow = false;
+        viewer.fit();
+      }
+    } else {
+      const sidebar = $('.sidebar');
+      if (sidebar) sidebar.scrollTop = 0;
+    }
+  });
+}
+
+/* ═════════════════════ the format: one definition for everything ═════════════════════ */
+const GEO_VERSION = '0.1';
+const GEO_FORMAT = 'gsc-geo';
+const GEO_LIMITS = { nodes: 400, depth: 12 };
+
+const TOP_FIELDS = [
+  { key: 'format', type: '"gsc-geo"', req: true, def: '—', desc: 'Format marker. Must be exactly <code>gsc-geo</code>.' },
+  { key: 'version', type: '"0.1"', req: true, def: '—', desc: 'Schema version this engine implements.' },
+  { key: 'meta', type: 'object', req: false, def: '{}', desc: 'Name, category, units and axis convention. Only <code>units</code> changes the build.' },
+  { key: 'budget', type: 'object', req: false, def: '—', desc: 'Default triangle cap, LOD count and texture resolution, used when the compile options are 0.' },
+  { key: 'materials', type: 'array', req: true, def: '—', desc: 'Material palette, at least one entry. Nodes reference entries by <code>id</code>.' },
+  { key: 'root', type: 'node', req: true, def: '—', desc: 'Single root node, normally <code>{"type": "group"}</code>.' },
+];
+
+const META_FIELDS = [
+  { key: 'name', type: 'string', req: false, def: '"gsc-asset"', desc: 'Asset name. Becomes the GLB file name and the report title.' },
+  { key: 'category', type: 'string', req: false, def: '"prop"', desc: 'Free-form category label, e.g. <code>vehicle</code>, <code>furniture</code>.' },
+  { key: 'units', type: '"m" | "cm" | "mm"', req: false, def: '"m"', desc: 'Units of every coordinate in the document. <code>cm</code> and <code>mm</code> are converted to metres on build.' },
+  { key: 'upAxis', type: '"Y" | "Z"', req: false, def: '"Y"', desc: 'Declared up axis. This engine builds Y-up.' },
+  { key: 'forwardAxis', type: '"-Z" | "+Z" | "-X" | "+X"', req: false, def: '"-Z"', desc: 'Declared forward axis, informational.' },
+];
+
+const BUDGET_FIELDS = [
+  { key: 'targetTriangles', type: 'integer 100–1000000', req: false, def: '—', desc: 'Triangle cap for the compiled mesh. Tessellation is lowered until the mesh fits.' },
+  { key: 'lodLevels', type: 'integer 1–6', req: false, def: '1', desc: 'How many LOD meshes to generate; LOD0 is the full result.' },
+  { key: 'textureResolution', type: 'integer 128–8192', req: false, def: '2048', desc: 'Declared texture resolution for downstream tools; this build does not bake textures.' },
+];
+
+const MATERIAL_FIELDS = [
+  { key: 'id', type: 'string', req: true, def: '—', desc: 'Unique id, <code>[A-Za-z0-9_.-]+</code>. Referenced by <code>node.material</code>.' },
+  { key: 'baseColor', type: '[r, g, b] or "#rrggbb"', req: false, def: '[0.76, 0.78, 0.82]', desc: 'sRGB base colour, each channel 0–1.' },
+  { key: 'metallic', type: 'number 0–1', req: false, def: '0', desc: 'PBR metalness.' },
+  { key: 'roughness', type: 'number 0–1', req: false, def: '0.55', desc: 'PBR roughness.' },
+  { key: 'opacity', type: 'number 0–1', req: false, def: '1', desc: 'Below 1 makes the material transparent (glass, decals).' },
+  { key: 'emissive', type: '[r, g, b] or "#rrggbb"', req: false, def: '—', desc: 'Emission colour, for lamps, screens and lights.' },
+  { key: 'emissiveIntensity', type: 'number 0–6', req: false, def: '1', desc: 'Emission strength; only used together with <code>emissive</code>.' },
+];
+
+const NODE_FIELDS = [
+  { key: 'id', type: 'string', req: true, def: '—', desc: 'Unique within the document, <code>[A-Za-z0-9_.-]+</code>.' },
+  { key: 'type', type: 'enum', req: true, def: '—', desc: '<code>group</code>, <code>box</code>, <code>cylinder</code>, <code>cone</code>, <code>sphere</code>, <code>capsule</code>, <code>torus</code>, <code>lathe</code>, <code>extrude</code>.' },
+  { key: 'position', type: '[x, y, z]', req: false, def: '[0, 0, 0]', desc: 'Translation in blueprint units, relative to the parent.' },
+  { key: 'rotation', type: '[x, y, z] degrees', req: false, def: '[0, 0, 0]', desc: 'Euler rotation in degrees, applied in XYZ order.' },
+  { key: 'scale', type: '[x, y, z]', req: false, def: '[1, 1, 1]', desc: 'Scale. Components must not be 0.' },
+  { key: 'material', type: 'string', req: false, def: '—', desc: 'Id of an entry in <code>materials</code>. Without it the node uses a neutral grey material.' },
+  { key: 'mirror', type: '{ axis, enabled }', req: false, def: 'off', desc: 'Adds a mirrored twin of the node across the given axis — how wheels, legs, windows and arms are built once.' },
+  { key: 'params', type: 'object', req: false, def: 'see each type', desc: 'Primitive parameters, documented per node type below. Every parameter has a default.' },
+  { key: 'children', type: 'node[]', req: false, def: '—', desc: 'Only allowed on <code>group</code>. Each child inherits the parent transform.' },
+];
+
+const NODE_SPEC = {
+  group: {
+    summary: 'Transform-only container. Carries a position / rotation / scale and its children; contributes no geometry of its own.',
+    params: [],
+    children: true,
+  },
+  box: {
+    summary: 'Axis-aligned box, centred on its own origin.',
+    params: [
+      { key: 'size', kind: 'vec3>0', def: [1, 1, 1], desc: 'Width (X), height (Y), depth (Z).' },
+    ],
+  },
+  cylinder: {
+    summary: 'Cylinder or truncated cone along Y. Wheels, legs, posts, columns.',
+    params: [
+      { key: 'radiusTop', kind: 'num>=0', def: 0.5, desc: 'Radius at the +Y end.' },
+      { key: 'radiusBottom', kind: 'num>=0', def: 0.5, desc: 'Radius at the −Y end.' },
+      { key: 'height', kind: 'num>0', def: 1, desc: 'Extent along Y, centred on the origin.' },
+      { key: 'radialSegments', kind: 'int', min: 3, max: 96, def: 24, desc: 'Segments around the axis — the main triangle-count knob.' },
+      { key: 'openEnded', kind: 'bool', def: false, desc: 'Skip the two caps.' },
+    ],
+  },
+  cone: {
+    summary: 'Cone along Y with an optional open base. Lamp shades, spires, funnels.',
+    params: [
+      { key: 'radius', kind: 'num>0', def: 0.5, desc: 'Base radius.' },
+      { key: 'height', kind: 'num>0', def: 1, desc: 'Extent along Y, centred on the origin.' },
+      { key: 'radialSegments', kind: 'int', min: 3, max: 96, def: 24, desc: 'Segments around the axis.' },
+      { key: 'openEnded', kind: 'bool', def: false, desc: 'Skip the base cap.' },
+    ],
+  },
+  sphere: {
+    summary: 'UV sphere centred on its own origin.',
+    params: [
+      { key: 'radius', kind: 'num>0', def: 0.5, desc: 'Radius.' },
+      { key: 'widthSegments', kind: 'int', min: 3, max: 96, def: 24, desc: 'Segments around Y.' },
+      { key: 'heightSegments', kind: 'int', min: 2, max: 64, def: 16, desc: 'Segments from pole to pole.' },
+    ],
+  },
+  capsule: {
+    summary: 'Cylinder with hemispherical caps along Y.',
+    params: [
+      { key: 'radius', kind: 'num>0', def: 0.35, desc: 'Radius.' },
+      { key: 'length', kind: 'num>=0', def: 0.8, desc: 'Straight section between the caps.' },
+      { key: 'capSegments', kind: 'int', min: 2, max: 32, def: 6, desc: 'Segments per cap.' },
+      { key: 'radialSegments', kind: 'int', min: 3, max: 96, def: 16, desc: 'Segments around the axis.' },
+    ],
+  },
+  torus: {
+    summary: 'Torus lying in the XZ plane, centred on its origin.',
+    params: [
+      { key: 'radius', kind: 'num>0', def: 0.5, desc: 'Distance from the centre to the tube centre.' },
+      { key: 'tube', kind: 'num>0', def: 0.15, desc: 'Tube radius.' },
+      { key: 'radialSegments', kind: 'int', min: 3, max: 64, def: 16, desc: 'Segments around the tube.' },
+      { key: 'tubularSegments', kind: 'int', min: 3, max: 160, def: 48, desc: 'Segments around the ring.' },
+    ],
+  },
+  lathe: {
+    summary: 'A profile revolved around the Y axis. The tool for bottles, vases, lamp bases, bowls and anything with radial symmetry.',
+    params: [
+      { key: 'points', kind: 'points', min: 2, max: 60, def: [[0, 0], [0.3, 0.05], [0.35, 0.6], [0.2, 1], [0, 1]], desc: 'Profile as <code>[radius, height]</code> pairs ordered by height. A radius of 0 closes the surface at the axis.' },
+      { key: 'segments', kind: 'int', min: 3, max: 96, def: 32, desc: 'Segments around the revolution.' },
+    ],
+  },
+  extrude: {
+    summary: 'A closed 2D polygon in the local XY plane, extruded along Z. Body panels, gables, silhouettes, signage.',
+    params: [
+      { key: 'profile', kind: 'profile', min: 3, max: 64, def: [[-0.5, -0.4], [0.5, -0.4], [0.5, 0.4], [-0.5, 0.4]], desc: 'Closed polygon as <code>[x, y]</code> pairs, 3 to 64 points. Winding is normalised for you.' },
+      { key: 'depth', kind: 'num>0', def: 0.4, desc: 'Extrusion depth along Z, centred on the origin.' },
+      { key: 'taper', kind: 'num', min: 0.05, max: 4, def: 1, desc: 'Scale of the far (+Z) cap: 1 is a straight extrusion, 0.6 a tapered one.' },
+      { key: 'bevel', kind: 'bool', def: false, desc: 'Round the caps slightly.' },
+      { key: 'bevelSize', kind: 'num>0', def: 0.02, desc: 'Bevel size, used when <code>bevel</code> is true.' },
+    ],
+  },
+};
+
+const NODE_TYPES = Object.keys(NODE_SPEC);
+
+/* ───────────────────────── examples ───────────────────────── */
+const EXAMPLES = {
+  minimal: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'minimal-cube', category: 'prop', units: 'm', upAxis: 'Y', forwardAxis: '-Z' },
+    materials: [{ id: 'surface', baseColor: [0.74, 0.78, 0.84], metallic: 0.1, roughness: 0.45 }],
+    root: {
+      id: 'root',
+      type: 'group',
+      children: [
+        { id: 'cube', type: 'box', material: 'surface', position: [0, 0.5, 0], params: { size: [1, 1, 1] } },
+      ],
+    },
+  },
+  crate: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'wooden-crate', category: 'container', units: 'm', upAxis: 'Y', forwardAxis: '-Z' },
+    budget: { targetTriangles: 12000, lodLevels: 3, textureResolution: 2048 },
+    materials: [
+      { id: 'wood', baseColor: [0.44, 0.3, 0.17], metallic: 0.04, roughness: 0.72 },
+      { id: 'woodDark', baseColor: [0.24, 0.16, 0.09], metallic: 0.04, roughness: 0.78 },
+      { id: 'metal', baseColor: [0.55, 0.57, 0.6], metallic: 0.85, roughness: 0.35 },
+    ],
+    root: {
+      id: 'crate',
+      type: 'group',
+      children: [
+        { id: 'shell', type: 'box', material: 'wood', position: [0, 0.5, 0], params: { size: [0.94, 0.96, 1.03] } },
+        { id: 'post-front-left', type: 'box', material: 'woodDark', position: [0.43, 0.5, 0.48], mirror: { axis: 'x', enabled: true }, params: { size: [0.12, 1, 0.12] } },
+        { id: 'post-back-left', type: 'box', material: 'woodDark', position: [0.43, 0.5, -0.48], mirror: { axis: 'x', enabled: true }, params: { size: [0.12, 1, 0.12] } },
+        { id: 'rail-x-low', type: 'box', material: 'woodDark', position: [0, 0.07, 0.48], mirror: { axis: 'z', enabled: true }, params: { size: [1, 0.1, 0.1] } },
+        { id: 'rail-x-high', type: 'box', material: 'woodDark', position: [0, 0.93, 0.48], mirror: { axis: 'z', enabled: true }, params: { size: [1, 0.1, 0.1] } },
+        { id: 'rail-z-low', type: 'box', material: 'woodDark', position: [0.43, 0.07, 0], mirror: { axis: 'x', enabled: true }, params: { size: [0.1, 0.1, 1.06] } },
+        { id: 'rail-z-high', type: 'box', material: 'woodDark', position: [0.43, 0.93, 0], mirror: { axis: 'x', enabled: true }, params: { size: [0.1, 0.1, 1.06] } },
+        { id: 'brace-left', type: 'box', material: 'metal', position: [0.48, 0.5, 0.48], rotation: [0, 0, -42], params: { size: [0.03, 1.16, 0.03] } },
+        { id: 'brace-right', type: 'box', material: 'metal', position: [-0.48, 0.5, 0.48], rotation: [0, 0, 42], params: { size: [0.03, 1.16, 0.03] } },
+      ],
+    },
+  },
+  car: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'sports-car', category: 'vehicle', units: 'm', upAxis: 'Y', forwardAxis: '-Z' },
+    budget: { targetTriangles: 25000, lodLevels: 3, textureResolution: 2048 },
+    materials: [
+      { id: 'paint', baseColor: [0.62, 0.08, 0.11], metallic: 0.55, roughness: 0.26 },
+      { id: 'glass', baseColor: [0.55, 0.7, 0.8], metallic: 0.1, roughness: 0.05, opacity: 0.42 },
+      { id: 'trim', baseColor: [0.06, 0.065, 0.07], metallic: 0.2, roughness: 0.7 },
+      { id: 'chrome', baseColor: [0.66, 0.69, 0.72], metallic: 0.95, roughness: 0.22 },
+      { id: 'rubber', baseColor: [0.05, 0.055, 0.06], metallic: 0, roughness: 0.95 },
+      { id: 'light', baseColor: [1, 0.95, 0.82], metallic: 0, roughness: 0.3, emissive: [1, 0.88, 0.6], emissiveIntensity: 1.6 },
+    ],
+    root: {
+      id: 'car',
+      type: 'group',
+      children: [
+        {
+          id: 'body',
+          type: 'extrude',
+          material: 'paint',
+          rotation: [0, 90, 0],
+          params: {
+            profile: [
+              [2.15, 0.27], [2.064, 0.095], [1.763, 0.041], [0.215, 0.027], [-1.634, 0.041],
+              [-2.107, 0.162], [-2.15, 0.567], [-1.978, 0.743], [-1.29, 0.783], [1.29, 0.783],
+              [1.892, 0.702], [2.107, 0.486],
+            ],
+            depth: 1.84,
+            taper: 1,
+          },
+        },
+        {
+          id: 'cabin',
+          type: 'extrude',
+          material: 'glass',
+          rotation: [0, 90, 0],
+          params: { profile: [[0.86, 0.756], [0.43, 1.256], [-0.688, 1.256], [-1.032, 0.756]], depth: 1.55, taper: 1 },
+        },
+        { id: 'roof', type: 'box', material: 'paint', position: [0, 1.28, 0], params: { size: [1.4, 0.06, 1.3] } },
+        { id: 'spoiler', type: 'box', material: 'trim', position: [0, 0.86, 1.89], params: { size: [1.62, 0.05, 0.28] } },
+        { id: 'grille', type: 'box', material: 'trim', position: [0, 0.27, -2.1], params: { size: [1.14, 0.2, 0.06] } },
+        { id: 'headlight', type: 'box', material: 'light', position: [0.57, 0.46, -1.98], mirror: { axis: 'x', enabled: true }, params: { size: [0.36, 0.1, 0.08] } },
+        { id: 'taillight', type: 'box', material: 'light', position: [0.57, 0.49, 2.02], mirror: { axis: 'x', enabled: true }, params: { size: [0.4, 0.08, 0.07] } },
+        { id: 'exhaust', type: 'cylinder', material: 'chrome', position: [0.36, 0.2, 2.12], rotation: [90, 0, 0], mirror: { axis: 'x', enabled: true }, params: { radiusTop: 0.045, radiusBottom: 0.045, height: 0.2, radialSegments: 16 } },
+        { id: 'wheel-rear', type: 'cylinder', material: 'rubber', position: [0.86, 0.36, 1.29], rotation: [0, 0, 90], mirror: { axis: 'x', enabled: true }, params: { radiusTop: 0.36, radiusBottom: 0.36, height: 0.26, radialSegments: 32 } },
+        { id: 'wheel-front', type: 'cylinder', material: 'rubber', position: [0.86, 0.36, -1.376], rotation: [0, 0, 90], mirror: { axis: 'x', enabled: true }, params: { radiusTop: 0.36, radiusBottom: 0.36, height: 0.26, radialSegments: 32 } },
+        { id: 'rim-rear', type: 'cylinder', material: 'chrome', position: [0.88, 0.36, 1.29], rotation: [0, 0, 90], mirror: { axis: 'x', enabled: true }, params: { radiusTop: 0.2, radiusBottom: 0.2, height: 0.28, radialSegments: 20 } },
+        { id: 'rim-front', type: 'cylinder', material: 'chrome', position: [0.88, 0.36, -1.376], rotation: [0, 0, 90], mirror: { axis: 'x', enabled: true }, params: { radiusTop: 0.2, radiusBottom: 0.2, height: 0.28, radialSegments: 20 } },
+      ],
+    },
+  },
+  lamp: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'table-lamp', category: 'lighting', units: 'm', upAxis: 'Y', forwardAxis: '-Z' },
+    budget: { targetTriangles: 8000, lodLevels: 2, textureResolution: 1024 },
+    materials: [
+      { id: 'base', baseColor: [0.18, 0.18, 0.2], metallic: 0.6, roughness: 0.35 },
+      { id: 'shade', baseColor: [0.84, 0.76, 0.52], metallic: 0.05, roughness: 0.6 },
+      { id: 'bulb', baseColor: [1, 0.95, 0.8], metallic: 0, roughness: 0.35, emissive: [1, 0.86, 0.55], emissiveIntensity: 2 },
+    ],
+    root: {
+      id: 'lamp',
+      type: 'group',
+      children: [
+        {
+          id: 'foot',
+          type: 'lathe',
+          material: 'base',
+          params: {
+            points: [[0, 0], [0.22, 0.01], [0.225, 0.075], [0.13, 0.135], [0.05, 0.18], [0, 0.195]],
+            segments: 32,
+          },
+        },
+        { id: 'stem', type: 'cylinder', material: 'base', position: [0, 0.825, 0], params: { radiusTop: 0.018, radiusBottom: 0.026, height: 1.29, radialSegments: 14 } },
+        { id: 'shade', type: 'cone', material: 'shade', position: [0, 1.29, 0], params: { radius: 0.3, height: 0.36, radialSegments: 28, openEnded: true } },
+        { id: 'bulb', type: 'sphere', material: 'bulb', position: [0, 1.23, 0], params: { radius: 0.055, widthSegments: 12, heightSegments: 8 } },
+      ],
+    },
+  },
+  tv: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'samsung-tv-55', category: 'display', units: 'mm', upAxis: 'Y', forwardAxis: '-Z' },
+    budget: { targetTriangles: 12000, lodLevels: 3, textureResolution: 2048 },
+    materials: [
+      { id: 'bezel', baseColor: [0.055, 0.06, 0.065], metallic: 0.85, roughness: 0.35 },
+      { id: 'screen', baseColor: [0.012, 0.016, 0.022], metallic: 0.1, roughness: 0.06 },
+      { id: 'shell', baseColor: [0.085, 0.09, 0.095], metallic: 0.05, roughness: 0.55 },
+      { id: 'plastic', baseColor: [0.03, 0.032, 0.036], metallic: 0.1, roughness: 0.6 },
+      { id: 'metal', baseColor: [0.62, 0.64, 0.68], metallic: 0.95, roughness: 0.28 },
+      { id: 'logo', baseColor: [0.85, 0.86, 0.88], metallic: 0.9, roughness: 0.2 },
+      { id: 'led', baseColor: [0.9, 0.1, 0.1], metallic: 0, roughness: 0.35, emissive: [1, 0.12, 0.1], emissiveIntensity: 2 },
+    ],
+    root: {
+      id: 'samsung-tv-55',
+      type: 'group',
+      children: [
+        {
+          id: 'body',
+          type: 'group',
+          children: [
+            { id: 'bezel-top', type: 'box', material: 'bezel', position: [0, 764.9, -10.45], params: { size: [1227.6, 6, 6] } },
+            { id: 'bezel-bottom', type: 'box', material: 'bezel', position: [0, 69.05, -10.45], params: { size: [1227.6, 16.1, 6] } },
+            { id: 'bezel-side', type: 'box', material: 'bezel', position: [611.25, 419.5, -10.45], mirror: { axis: 'x', enabled: true }, params: { size: [5.1, 684.8, 6] } },
+            { id: 'screen', type: 'box', material: 'screen', position: [0, 419.5, -11.95], params: { size: [1217.4, 684.8, 3] } },
+            { id: 'back-shell', type: 'box', material: 'shell', position: [0, 414.45, -1.5], params: { size: [1227.6, 706.9, 11.9] } },
+            { id: 'back-bulge', type: 'box', material: 'shell', position: [0, 414.45, 8.95], params: { size: [520, 400, 9] } },
+            { id: 'vent-1', type: 'box', material: 'plastic', position: [0, 519.45, 13], params: { size: [416, 7, 1] } },
+            { id: 'vent-2', type: 'box', material: 'plastic', position: [0, 544.45, 13], params: { size: [416, 7, 1] } },
+            { id: 'vent-3', type: 'box', material: 'plastic', position: [0, 569.45, 13], params: { size: [416, 7, 1] } },
+            { id: 'speaker-grille', type: 'box', material: 'plastic', position: [0, 131, 4.95], params: { size: [700, 26, 1] } },
+            { id: 'logo', type: 'box', material: 'logo', position: [0, 69.05, -13.65], params: { size: [46, 7, 0.4] } },
+            { id: 'ir-window', type: 'box', material: 'plastic', position: [-560, 69.05, -13.65], params: { size: [16, 6, 0.4] } },
+            { id: 'standby-led', type: 'box', material: 'led', position: [540, 69.05, -13.65], params: { size: [8, 3, 0.4] } },
+          ],
+        },
+        {
+          id: 'ports',
+          type: 'group',
+          children: [
+            { id: 'hdmi-1', type: 'box', material: 'plastic', position: [330, 260, 8.45], params: { size: [22, 11, 8] } },
+            { id: 'hdmi-2', type: 'box', material: 'plastic', position: [358, 260, 8.45], params: { size: [22, 11, 8] } },
+            { id: 'hdmi-3', type: 'box', material: 'plastic', position: [386, 260, 8.45], params: { size: [22, 11, 8] } },
+            { id: 'hdmi-4', type: 'box', material: 'plastic', position: [414, 260, 8.45], params: { size: [22, 11, 8] } },
+            { id: 'usb', type: 'box', material: 'plastic', position: [470, 268, 8.45], params: { size: [14, 8, 8] } },
+            { id: 'optical', type: 'box', material: 'plastic', position: [510, 300, 8.45], params: { size: [16, 16, 8] } },
+            { id: 'lan', type: 'box', material: 'plastic', position: [510, 260, 8.45], params: { size: [14, 12, 8] } },
+            { id: 'rf', type: 'box', material: 'plastic', position: [510, 220, 8.45], params: { size: [14, 14, 8] } },
+            { id: 'power-inlet', type: 'box', material: 'plastic', position: [470, 180, 8.95], params: { size: [30, 20, 9] } },
+          ],
+        },
+        {
+          id: 'stand',
+          type: 'group',
+          children: [
+            { id: 'stand-base', type: 'box', material: 'metal', position: [0, 6, 104.35], params: { size: [380, 12, 235.6] } },
+            { id: 'stand-neck', type: 'box', material: 'metal', position: [0, 36.5, 24], params: { size: [80, 49, 46] } },
+            { id: 'stand-plate', type: 'box', material: 'metal', position: [0, 49, 6], params: { size: [340, 24, 12] } },
+          ],
+        },
+      ],
+    },
+  },
+};
+
+/* ───────────────────────── state ───────────────────────── */
+const state = {
+  parsed: null,
+  validation: null,
+  resolved: null,
+  build: null,
+  stats: null,
+  lods: [],
+  report: null,
+  timing: {},
+  exportInfo: null,
+  busy: false,
+};
+
+/* ═════════════════════ validation ═════════════════════ */
+function validateBlueprint(doc) {
+  const issues = [];
+  const add = (level, code, path, message) => issues.push({ level, code, path, message });
+  const err = (code, path, message) => add('error', code, path, message);
+  const warn = (code, path, message) => add('warning', code, path, message);
+  const counts = { nodes: 0, primitives: 0, groups: 0, materials: 0 };
+  const materials = new Map();
+  const ids = new Set();
+
+  const isNum = (v) => typeof v === 'number' && Number.isFinite(v);
+  const isVec3 = (v) => Array.isArray(v) && v.length === 3 && v.every(isNum);
+  const isPlainObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+  const isColor = (v) => (Array.isArray(v) && v.length >= 3 && v.slice(0, 3).every((x) => isNum(x) && x >= 0 && x <= 1))
+    || (typeof v === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v));
+
+  const finish = () => {
+    const errors = issues.filter((i) => i.level === 'error').length;
+    const warnings = issues.filter((i) => i.level === 'warning').length;
+    return { ok: errors === 0, issues, errors, warnings, counts, materials };
+  };
+
+  if (!isPlainObject(doc)) {
+    err('E_ROOT', '$', 'The document must be a JSON object.');
+    return finish();
+  }
+
+  Object.keys(doc).forEach((key) => {
+    if (!['format', 'version', 'meta', 'budget', 'materials', 'root', '$schema', '$comment'].includes(key)) {
+      warn('W_TOP_KEY', `$.${key}`, `unknown top-level field "${key}" — ignored.`);
+    }
+  });
+
+  if (doc.format !== GEO_FORMAT) err('E_FORMAT', '$.format', `format must be "${GEO_FORMAT}".`);
+  if (doc.version === undefined) err('E_VERSION', '$.version', `version is required ("${GEO_VERSION}").`);
+  else if (String(doc.version) !== GEO_VERSION) warn('W_VERSION', '$.version', `version "${doc.version}" — this compiler implements ${GEO_VERSION}.`);
+
+  if (doc.meta !== undefined) {
+    if (!isPlainObject(doc.meta)) {
+      err('E_META', '$.meta', 'meta must be an object.');
+    } else {
+      if (doc.meta.name !== undefined && typeof doc.meta.name !== 'string') err('E_META', '$.meta.name', 'name must be a string.');
+      if (doc.meta.category !== undefined && typeof doc.meta.category !== 'string') err('E_META', '$.meta.category', 'category must be a string.');
+      if (doc.meta.units !== undefined && !['m', 'cm', 'mm'].includes(doc.meta.units)) err('E_UNITS', '$.meta.units', 'units must be "m", "cm" or "mm".');
+      if (doc.meta.upAxis !== undefined && !['Y', 'Z'].includes(doc.meta.upAxis)) warn('W_UPAXIS', '$.meta.upAxis', 'upAxis should be "Y" (or "Z").');
+      if (doc.meta.forwardAxis !== undefined && !['-Z', '+Z', '-X', '+X'].includes(doc.meta.forwardAxis)) warn('W_FORWARD', '$.meta.forwardAxis', 'forwardAxis should be one of "-Z", "+Z", "-X", "+X".');
+    }
+  }
+
+  if (doc.budget !== undefined) {
+    if (!isPlainObject(doc.budget)) {
+      err('E_BUDGET', '$.budget', 'budget must be an object.');
+    } else {
+      const b = doc.budget;
+      if (b.targetTriangles !== undefined && !(isNum(b.targetTriangles) && b.targetTriangles >= 100 && b.targetTriangles <= 1000000)) {
+        err('E_BUDGET', '$.budget.targetTriangles', 'targetTriangles must be a number between 100 and 1000000.');
+      }
+      if (b.lodLevels !== undefined && !(Number.isInteger(b.lodLevels) && b.lodLevels >= 1 && b.lodLevels <= 6)) {
+        err('E_BUDGET', '$.budget.lodLevels', 'lodLevels must be an integer between 1 and 6.');
+      }
+      if (b.textureResolution !== undefined && !(Number.isInteger(b.textureResolution) && b.textureResolution >= 128 && b.textureResolution <= 8192)) {
+        err('E_BUDGET', '$.budget.textureResolution', 'textureResolution must be an integer between 128 and 8192.');
+      }
+      Object.keys(b).forEach((key) => {
+        if (!['targetTriangles', 'lodLevels', 'textureResolution'].includes(key)) warn('W_BUDGET_KEY', `$.budget.${key}`, `unknown budget field "${key}" — ignored.`);
+      });
+    }
+  } else {
+    warn('W_NO_BUDGET', '$.budget', 'no budget declared — use the compile options to cap triangles and LODs.');
+  }
+
+  if (doc.materials === undefined) {
+    warn('W_NO_MATERIALS', '$.materials', 'no materials declared — nodes without a material use a neutral grey.');
+  } else if (!Array.isArray(doc.materials)) {
+    err('E_MATERIALS', '$.materials', 'materials must be an array.');
+  } else if (doc.materials.length === 0) {
+    warn('W_NO_MATERIALS', '$.materials', 'the material palette is empty — nodes without a material use a neutral grey.');
+  } else {
+    doc.materials.forEach((m, i) => {
+      const p = `$.materials[${i}]`;
+      if (!isPlainObject(m)) { err('E_MATERIAL', p, 'a material must be an object.'); return; }
+      if (typeof m.id !== 'string' || !m.id) { err('E_MATERIAL_ID', `${p}.id`, 'a material needs a string id.'); return; }
+      if (!/^[A-Za-z0-9_.-]+$/.test(m.id)) { err('E_MATERIAL_ID', `${p}.id`, `material id "${m.id}" may only contain A-Z a-z 0-9 _ . -`); return; }
+      if (materials.has(m.id)) { err('E_MATERIAL_DUP', `${p}.id`, `duplicate material id "${m.id}".`); return; }
+      materials.set(m.id, m);
+      counts.materials++;
+      if (m.baseColor !== undefined && !isColor(m.baseColor)) err('E_MATERIAL_COLOR', `${p}.baseColor`, 'baseColor must be [r, g, b] within 0–1 or a hex colour.');
+      if (m.emissive !== undefined && !isColor(m.emissive)) err('E_MATERIAL_COLOR', `${p}.emissive`, 'emissive must be [r, g, b] within 0–1 or a hex colour.');
+      ['metallic', 'roughness', 'opacity'].forEach((key) => {
+        if (m[key] !== undefined && !(isNum(m[key]) && m[key] >= 0 && m[key] <= 1)) {
+          err('E_MATERIAL_RANGE', `${p}.${key}`, `${key} must be a number between 0 and 1.`);
+        }
+      });
+      if (m.emissiveIntensity !== undefined && !(isNum(m.emissiveIntensity) && m.emissiveIntensity >= 0 && m.emissiveIntensity <= 6)) {
+        err('E_MATERIAL_RANGE', `${p}.emissiveIntensity`, 'emissiveIntensity must be a number between 0 and 6.');
+      }
+      Object.keys(m).forEach((key) => {
+        if (!['id', 'baseColor', 'metallic', 'roughness', 'opacity', 'emissive', 'emissiveIntensity'].includes(key)) {
+          warn('W_MATERIAL_KEY', `${p}.${key}`, `unknown material field "${key}" — ignored.`);
+        }
+      });
+    });
+  }
+
+  function checkParams(params, type, path) {
+    const spec = NODE_SPEC[type];
+    const known = new Set(spec.params.map((x) => x.key));
+    Object.keys(params).forEach((key) => {
+      if (!known.has(key)) warn('W_PARAM_UNKNOWN', `${path}.${key}`, `unknown parameter "${key}" for type "${type}" — ignored.`);
+    });
+    spec.params.forEach((p) => {
+      const value = params[p.key];
+      if (value === undefined) return;
+      const pp = `${path}.${p.key}`;
+      if (p.kind === 'num>0') {
+        if (!isNum(value) || value <= 0) err('E_PARAM', pp, `${p.key} must be a number greater than 0.`);
+      } else if (p.kind === 'num>=0') {
+        if (!isNum(value) || value < 0) err('E_PARAM', pp, `${p.key} must be a number greater than or equal to 0.`);
+      } else if (p.kind === 'num') {
+        if (!isNum(value) || value < p.min || value > p.max) err('E_PARAM', pp, `${p.key} must be a number between ${p.min} and ${p.max}.`);
+      } else if (p.kind === 'int') {
+        if (!isNum(value) || Math.round(value) !== value || value < p.min || value > p.max) {
+          err('E_PARAM', pp, `${p.key} must be an integer between ${p.min} and ${p.max}.`);
+        }
+      } else if (p.kind === 'bool') {
+        if (typeof value !== 'boolean') err('E_PARAM', pp, `${p.key} must be true or false.`);
+      } else if (p.kind === 'vec3>0') {
+        if (!isVec3(value) || value.some((x) => x <= 0)) err('E_PARAM', pp, `${p.key} must be [x, y, z] with all three greater than 0.`);
+      } else if (p.kind === 'points') {
+        if (!Array.isArray(value)) {
+          err('E_PARAM', pp, `${p.key} must be an array of [radius, height] pairs.`);
+        } else {
+          if (value.length < p.min || value.length > p.max) err('E_PARAM', pp, `${p.key} needs between ${p.min} and ${p.max} points.`);
+          const bad = value.some((pt) => !Array.isArray(pt) || pt.length < 2 || !isNum(pt[0]) || !isNum(pt[1]) || pt[0] < 0);
+          if (bad) err('E_PARAM', pp, 'every point must be [radius, height] with radius >= 0.');
+        }
+      } else if (p.kind === 'profile') {
+        if (!Array.isArray(value)) {
+          err('E_PARAM', pp, `${p.key} must be an array of [x, y] pairs.`);
+        } else {
+          if (value.length < p.min || value.length > p.max) err('E_PARAM', pp, `${p.key} needs between ${p.min} and ${p.max} points.`);
+          const bad = value.some((pt) => !Array.isArray(pt) || pt.length < 2 || !isNum(pt[0]) || !isNum(pt[1]));
+          if (bad) err('E_PARAM', pp, 'every point must be [x, y] numbers.');
+        }
+      }
+    });
+  }
+
+  function walk(node, path, depth) {
+    if (depth > GEO_LIMITS.depth) { err('E_DEPTH', path, `nesting deeper than ${GEO_LIMITS.depth} levels.`); return; }
+    if (!isPlainObject(node)) { err('E_NODE', path, 'a node must be an object.'); return; }
+    counts.nodes++;
+    if (counts.nodes > GEO_LIMITS.nodes) { err('E_COUNT', path, `more than ${GEO_LIMITS.nodes} nodes.`); return; }
+
+    const id = node.id;
+    if (typeof id !== 'string' || !id) err('E_ID', `${path}.id`, 'every node needs a string id.');
+    else if (!/^[A-Za-z0-9_.-]+$/.test(id)) err('E_ID', `${path}.id`, `node id "${id}" may only contain A-Z a-z 0-9 _ . -`);
+    else if (ids.has(id)) err('E_ID_DUP', `${path}.id`, `duplicate node id "${id}".`);
+    else ids.add(id);
+
+    const type = node.type;
+    if (typeof type !== 'string' || !NODE_SPEC[type]) {
+      err('E_TYPE', `${path}.type`, `type must be one of: ${NODE_TYPES.join(', ')}.`);
+      return;
+    }
+    if (type === 'group') counts.groups++;
+    else counts.primitives++;
+
+    if (node.position !== undefined && !isVec3(node.position)) err('E_TRANSFORM', `${path}.position`, 'position must be [x, y, z] numbers.');
+    if (node.rotation !== undefined && !isVec3(node.rotation)) err('E_TRANSFORM', `${path}.rotation`, 'rotation must be [x, y, z] numbers in degrees.');
+    if (node.scale !== undefined) {
+      if (!isVec3(node.scale)) err('E_TRANSFORM', `${path}.scale`, 'scale must be [x, y, z] numbers.');
+      else if (node.scale.some((x) => Math.abs(x) < 1e-5)) err('E_SCALE', `${path}.scale`, 'scale components must not be 0.');
+    }
+    if (node.material !== undefined) {
+      if (typeof node.material !== 'string') err('E_MATERIAL', `${path}.material`, 'material must be a material id string.');
+      else if (!materials.has(node.material)) err('E_MATERIAL', `${path}.material`, `unknown material "${node.material}".`);
+    }
+    if (node.mirror !== undefined) {
+      if (!isPlainObject(node.mirror)) {
+        err('E_MIRROR', `${path}.mirror`, 'mirror must be an object like { "axis": "x", "enabled": true }.');
+      } else {
+        if (node.mirror.axis !== undefined && !['x', 'y', 'z'].includes(node.mirror.axis)) err('E_MIRROR', `${path}.mirror.axis`, 'mirror.axis must be "x", "y" or "z".');
+        if (node.mirror.enabled !== undefined && typeof node.mirror.enabled !== 'boolean') err('E_MIRROR', `${path}.mirror.enabled`, 'mirror.enabled must be true or false.');
+        Object.keys(node.mirror).forEach((key) => {
+          if (!['axis', 'enabled'].includes(key)) warn('W_MIRROR_KEY', `${path}.mirror.${key}`, `unknown mirror field "${key}" — ignored.`);
+        });
+      }
+    }
+
+    if (node.params !== undefined) {
+      if (!isPlainObject(node.params)) err('E_PARAMS', `${path}.params`, 'params must be an object.');
+      else checkParams(node.params, type, `${path}.params`);
+    }
+
+    Object.keys(node).forEach((key) => {
+      if (!['id', 'type', 'position', 'rotation', 'scale', 'material', 'mirror', 'params', 'children'].includes(key)) {
+        warn('W_NODE_KEY', `${path}.${key}`, `unknown node field "${key}" — ignored.`);
+      }
+    });
+
+    if (type === 'group') {
+      if (node.children !== undefined && !Array.isArray(node.children)) {
+        err('E_CHILDREN', `${path}.children`, 'children must be an array of nodes.');
+      } else if (!Array.isArray(node.children) || node.children.length === 0) {
+        warn('W_EMPTY_GROUP', path, 'group has no children.');
+      }
+      (Array.isArray(node.children) ? node.children : []).forEach((child, i) => walk(child, `${path}.children[${i}]`, depth + 1));
+    } else if (node.children !== undefined) {
+      err('E_CHILDREN', `${path}.children`, 'children are only allowed on type "group".');
+    }
+  }
+
+  if (doc.root === undefined) {
+    err('E_ROOT_NODE', '$.root', 'root is required and must be a node.');
+  } else {
+    if (isPlainObject(doc.root) && doc.root.type !== undefined && doc.root.type !== 'group') {
+      warn('W_ROOT_TYPE', '$.root.type', 'root should be a "group" node.');
+    }
+    walk(doc.root, '$.root', 0);
+  }
+
+  return finish();
+}
+
+/* ═════════════════════ normalization (fill every default) ═════════════════════ */
+function hexToSrgbArray(hex) {
+  const raw = String(hex).replace('#', '');
+  const full = raw.length === 3 ? raw.split('').map((c) => c + c).join('') : raw.slice(0, 6);
+  return [
+    r4(parseInt(full.slice(0, 2), 16) / 255),
+    r4(parseInt(full.slice(2, 4), 16) / 255),
+    r4(parseInt(full.slice(4, 6), 16) / 255),
+  ];
+}
+
+function colorValue(value, fallback) {
+  if (Array.isArray(value) && value.length >= 3) {
+    return [r4(clamp(num(value[0], fallback[0]), 0, 1)), r4(clamp(num(value[1], fallback[1]), 0, 1)), r4(clamp(num(value[2], fallback[2]), 0, 1))];
+  }
+  if (typeof value === 'string' && /^#([0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(value)) return hexToSrgbArray(value);
+  return fallback.slice();
+}
+
+function cloneValue(value) {
+  if (Array.isArray(value)) return value.map(cloneValue);
+  if (value && typeof value === 'object') return JSON.parse(JSON.stringify(value));
+  return value;
+}
+
+function resolveMaterial(m) {
+  const out = {
+    id: String(m.id),
+    baseColor: colorValue(m.baseColor, [0.76, 0.78, 0.82]),
+    metallic: r4(clamp(num(m.metallic, 0), 0, 1)),
+    roughness: r4(clamp(num(m.roughness, 0.55), 0, 1)),
+    opacity: r4(clamp(num(m.opacity, 1), 0, 1)),
+  };
+  if (m.emissive !== undefined) {
+    out.emissive = colorValue(m.emissive, [1, 1, 1]);
+    out.emissiveIntensity = r4(clamp(num(m.emissiveIntensity, 1), 0, 6));
+  }
+  return out;
+}
+
+function resolveParamValue(p, value) {
+  if (p.kind === 'bool') return value === true;
+  if (p.kind === 'int') return Math.round(num(value, p.def));
+  if (p.kind === 'num' || p.kind === 'num>0' || p.kind === 'num>=0') return r4(num(value, p.def));
+  if (p.kind === 'vec3>0' || p.kind === 'points' || p.kind === 'profile') {
+    return value.map((pt) => (Array.isArray(pt) ? pt.map(r4) : pt));
+  }
+  return value;
+}
+
+function resolveNode(node, depth = 0) {
+  const type = NODE_SPEC[node.type] ? node.type : 'group';
+  const spec = NODE_SPEC[type];
+  const out = {
+    id: typeof node.id === 'string' && node.id ? node.id : `${type}-${depth}`,
+    type,
+    position: vec3(node.position, [0, 0, 0]).map(r4),
+    rotation: vec3(node.rotation, [0, 0, 0]).map(r4),
+    scale: vec3(node.scale, [1, 1, 1]).map(r4),
+  };
+  if (typeof node.material === 'string') out.material = node.material;
+  if (node.mirror && typeof node.mirror === 'object' && node.mirror.enabled !== false) {
+    out.mirror = { axis: ['x', 'y', 'z'].includes(node.mirror.axis) ? node.mirror.axis : 'x', enabled: true };
+  }
+  if (spec.params.length) {
+    const params = {};
+    spec.params.forEach((p) => {
+      const value = node.params ? node.params[p.key] : undefined;
+      params[p.key] = value === undefined ? cloneValue(p.def) : resolveParamValue(p, value);
+    });
+    out.params = params;
+  }
+  if (type === 'group') {
+    out.children = (Array.isArray(node.children) ? node.children : []).map((child, i) => resolveNode(child, depth + 1));
+  }
+  return out;
+}
+
+function resolveBlueprint(doc) {
+  const meta = doc.meta && typeof doc.meta === 'object' ? doc.meta : {};
+  const out = {
+    format: GEO_FORMAT,
+    version: GEO_VERSION,
+    meta: {
+      name: typeof meta.name === 'string' && meta.name ? meta.name : 'gsc-asset',
+      category: typeof meta.category === 'string' && meta.category ? meta.category : 'prop',
+      units: ['m', 'cm', 'mm'].includes(meta.units) ? meta.units : 'm',
+      upAxis: meta.upAxis === 'Z' ? 'Z' : 'Y',
+      forwardAxis: ['-Z', '+Z', '-X', '+X'].includes(meta.forwardAxis) ? meta.forwardAxis : '-Z',
+    },
+    materials: (Array.isArray(doc.materials) ? doc.materials : [])
+      .filter((m) => m && typeof m === 'object' && typeof m.id === 'string')
+      .map(resolveMaterial),
+    root: resolveNode(doc.root && typeof doc.root === 'object' ? doc.root : { id: 'root', type: 'group', children: [] }),
+  };
+  if (doc.budget && typeof doc.budget === 'object') {
+    const budget = {};
+    if (doc.budget.targetTriangles !== undefined) budget.targetTriangles = Math.round(num(doc.budget.targetTriangles, 0));
+    if (doc.budget.lodLevels !== undefined) budget.lodLevels = Math.round(num(doc.budget.lodLevels, 1));
+    if (doc.budget.textureResolution !== undefined) budget.textureResolution = Math.round(num(doc.budget.textureResolution, 2048));
+    if (Object.keys(budget).length) out.budget = budget;
+  }
+  return out;
+}
+
+/* ═════════════════════ geometry kernel ═════════════════════ */
+const QUALITY = {
+  preview: { segScale: 0.5 },
+  game: { segScale: 1 },
+  high: { segScale: 1.5 },
+};
+
+function colorFallback(c) {
+  c.setRGB(0.76, 0.78, 0.82, THREE.SRGBColorSpace);
+}
+
+function applyColor(target, value) {
+  if (Array.isArray(value) && value.length >= 3) {
+    target.setRGB(
+      clamp(num(value[0], 0.76), 0, 1),
+      clamp(num(value[1], 0.78), 0, 1),
+      clamp(num(value[2], 0.82), 0, 1),
+      THREE.SRGBColorSpace,
+    );
+  } else if (typeof value === 'string') {
+    try { target.setStyle(value); } catch { colorFallback(target); }
+  } else {
+    colorFallback(target);
+  }
+}
+
+function makeMaterial(def) {
+  const mat = new THREE.MeshStandardMaterial();
+  mat.name = def && def.id ? String(def.id) : 'material';
+  const color = new THREE.Color();
+  applyColor(color, def && def.baseColor !== undefined ? def.baseColor : [0.76, 0.78, 0.82]);
+  mat.color.copy(color);
+  mat.metalness = clamp(num(def && def.metallic, 0), 0, 1);
+  mat.roughness = clamp(num(def && def.roughness, 0.55), 0, 1);
+  const opacity = clamp(num(def && def.opacity, 1), 0, 1);
+  mat.opacity = opacity;
+  mat.transparent = opacity < 0.999;
+  mat.envMapIntensity = 1.35;
+  if (def && def.emissive !== undefined) {
+    const e = new THREE.Color();
+    applyColor(e, def.emissive);
+    mat.emissive.copy(e);
+    mat.emissiveIntensity = clamp(num(def.emissiveIntensity, 1), 0, 6);
+  }
+  return mat;
+}
+
+function applyTransform(obj, node, mirrorAxis) {
+  let [px, py, pz] = vec3(node.position, [0, 0, 0]);
+  let [rx, ry, rz] = vec3(node.rotation, [0, 0, 0]);
+  const scl = vec3(node.scale, [1, 1, 1]);
+  if (mirrorAxis === 'x') { px = -px; ry = -ry; rz = -rz; }
+  else if (mirrorAxis === 'y') { py = -py; rx = -rx; rz = -rz; }
+  else if (mirrorAxis === 'z') { pz = -pz; rx = -rx; ry = -ry; }
+  const safe = (v) => (Math.abs(v) < 1e-5 ? (v < 0 ? -1e-5 : 1e-5) : v);
+  obj.position.set(px, py, pz);
+  obj.rotation.set(deg(rx), deg(ry), deg(rz));
+  obj.scale.set(safe(scl[0]), safe(scl[1]), safe(scl[2]));
+}
+
+function buildGeometry(node, seg) {
+  const P = node.params || {};
+  const steps = (v, d, min, max) => clamp(Math.round(num(v, d) * seg.scale), min, max);
+
+  switch (node.type) {
+    case 'box': {
+      const size = Array.isArray(P.size) ? P.size : [1, 1, 1];
+      return new THREE.BoxGeometry(
+        Math.max(0.001, num(size[0], 1)),
+        Math.max(0.001, num(size[1], 1)),
+        Math.max(0.001, num(size[2], 1)),
+      );
+    }
+    case 'cylinder':
+      return new THREE.CylinderGeometry(
+        Math.max(0, num(P.radiusTop, 0.5)),
+        Math.max(0, num(P.radiusBottom, 0.5)),
+        Math.max(0.001, num(P.height, 1)),
+        steps(P.radialSegments, 24, 3, 96),
+        1,
+        P.openEnded === true,
+      );
+    case 'cone':
+      return new THREE.ConeGeometry(
+        Math.max(0.001, num(P.radius, 0.5)),
+        Math.max(0.001, num(P.height, 1)),
+        steps(P.radialSegments, 24, 3, 96),
+        1,
+        P.openEnded === true,
+      );
+    case 'sphere':
+      return new THREE.SphereGeometry(
+        Math.max(0.001, num(P.radius, 0.5)),
+        steps(P.widthSegments, 24, 3, 96),
+        steps(P.heightSegments, 16, 2, 64),
+      );
+    case 'capsule':
+      return new THREE.CapsuleGeometry(
+        Math.max(0.001, num(P.radius, 0.35)),
+        Math.max(0, num(P.length, 0.8)),
+        clamp(Math.round(num(P.capSegments, 6) * Math.max(0.4, seg.scale)), 2, 32),
+        clamp(Math.round(num(P.radialSegments, 16) * seg.scale), 3, 96),
+      );
+    case 'torus':
+      return new THREE.TorusGeometry(
+        Math.max(0.001, num(P.radius, 0.5)),
+        Math.max(0.001, num(P.tube, 0.15)),
+        clamp(Math.round(num(P.radialSegments, 16) * seg.scale), 3, 64),
+        clamp(Math.round(num(P.tubularSegments, 48) * seg.scale), 3, 160),
+      );
+    case 'lathe': {
+      const raw = Array.isArray(P.points) ? P.points : [];
+      const points = raw.map((pt) => new THREE.Vector2(
+        Math.max(0, num(Array.isArray(pt) ? pt[0] : pt && pt.r, 0)),
+        num(Array.isArray(pt) ? pt[1] : pt && pt.y, 0),
+      )).sort((a, b) => a.y - b.y);
+      if (points.length < 2) return new THREE.SphereGeometry(0.25, 12, 8);
+      return new THREE.LatheGeometry(points, steps(P.segments, 32, 3, 96));
+    }
+    case 'extrude': {
+      const raw = Array.isArray(P.profile) ? P.profile : [];
+      const pts = raw.map((pt) => [num(pt && pt[0], 0), num(pt && pt[1], 0)]);
+      if (pts.length < 3) return new THREE.BoxGeometry(0.4, 0.4, 0.4);
+      const shape = new THREE.Shape(pts.map(([x, y]) => new THREE.Vector2(x, y)));
+      const depth = clamp(num(P.depth, 0.4), 0.001, 60);
+      const bevel = P.bevel === true;
+      const geometry = new THREE.ExtrudeGeometry(shape, {
+        depth,
+        bevelEnabled: bevel,
+        bevelSize: Math.max(0.001, num(P.bevelSize, 0.02)),
+        bevelThickness: Math.max(0.001, num(P.bevelSize, 0.02)),
+        bevelSegments: 2,
+        steps: 1,
+        curveSegments: clamp(Math.round(12 * seg.scale), 4, 32),
+      });
+      geometry.translate(0, 0, -depth / 2);
+      const taper = clamp(num(P.taper, 1), 0.05, 4);
+      if (Math.abs(taper - 1) > 1e-4) {
+        const pos = geometry.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const t = clamp((pos.getZ(i) + depth / 2) / depth, 0, 1);
+          const k = 1 + (taper - 1) * t;
+          pos.setX(i, pos.getX(i) * k);
+          pos.setY(i, pos.getY(i) * k);
+        }
+        pos.needsUpdate = true;
+        geometry.computeVertexNormals();
+      }
+      return geometry;
+    }
+    default:
+      return new THREE.BoxGeometry(0.3, 0.3, 0.3);
+  }
+}
+
+function compileNode(node, ctx) {
+  const container = new THREE.Object3D();
+  container.name = String(node.id || node.type || 'node');
+  container.userData = { nodeId: node.id || null, type: node.type || null, material: node.material || null };
+  applyTransform(container, node);
+
+  const children = Array.isArray(node.children) ? node.children : [];
+  const mirrorOn = !!node.mirror && node.mirror.enabled !== false;
+  const axis = node.mirror && (node.mirror.axis === 'y' || node.mirror.axis === 'z') ? node.mirror.axis : 'x';
+
+  if (node.type === 'group') {
+    children.forEach((child) => container.add(compileNode(child, ctx)));
+    if (!mirrorOn) return container;
+    const twin = new THREE.Object3D();
+    twin.name = `${container.name}.mirror`;
+    applyTransform(twin, node, axis);
+    children.forEach((child) => twin.add(compileNode(child, ctx)));
+    const pair = new THREE.Object3D();
+    pair.name = `${container.name}.pair`;
+    pair.add(container, twin);
+    return pair;
+  }
+
+  const geometry = buildGeometry(node, ctx.seg);
+  const material = ctx.materials.get(node.material) || ctx.defaultMaterial;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.name = container.name;
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  container.add(mesh);
+
+  if (!mirrorOn) return container;
+
+  const twin = new THREE.Object3D();
+  twin.name = `${container.name}.mirror`;
+  applyTransform(twin, node, axis);
+  const twinMesh = new THREE.Mesh(geometry, material);
+  twinMesh.name = `${mesh.name}.mirror`;
+  twinMesh.castShadow = true;
+  twinMesh.receiveShadow = true;
+  twin.add(twinMesh);
+
+  const pair = new THREE.Object3D();
+  pair.name = `${container.name}.pair`;
+  pair.add(container, twin);
+  return pair;
+}
+
+function disposeObject(obj) {
+  if (!obj) return;
+  const materials = new Set();
+  obj.traverse((o) => {
+    if (o.isMesh) {
+      if (o.geometry) o.geometry.dispose();
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => { if (m) materials.add(m); });
+    }
+  });
+  materials.forEach((m) => { if (m.dispose) m.dispose(); });
+}
+
+function compileBlueprint(bp, opts = {}) {
+  const quality = QUALITY[opts.quality] || QUALITY.game;
+  const seg = { scale: clamp(quality.segScale * clamp(num(opts.segScale, 1), 0.15, 2.5), 0.12, 3) };
+
+  const materialMap = new Map();
+  (Array.isArray(bp.materials) ? bp.materials : []).forEach((def) => {
+    if (def && typeof def.id === 'string') materialMap.set(def.id, makeMaterial(def));
+  });
+  const ctx = {
+    seg,
+    materials: materialMap,
+    defaultMaterial: makeMaterial({ id: 'gsc.default', baseColor: [0.76, 0.78, 0.82], metallic: 0, roughness: 0.55 }),
+  };
+
+  const rootNode = bp.root && typeof bp.root === 'object' ? bp.root : { id: 'root', type: 'group', children: [] };
+  const rootObj = rootNode.type && rootNode.type !== 'group'
+    ? compileNode({ id: 'root', type: 'group', children: [rootNode] }, ctx)
+    : compileNode({ ...rootNode, id: rootNode.id || 'root', type: 'group' }, ctx);
+
+  const unitScale = bp.meta && bp.meta.units === 'cm' ? 0.01 : (bp.meta && bp.meta.units === 'mm' ? 0.001 : 1);
+  if (unitScale !== 1) rootObj.scale.multiplyScalar(unitScale);
+
+  const holder = new THREE.Group();
+  holder.name = bp.meta && bp.meta.name ? String(bp.meta.name) : 'gsc-asset';
+  holder.add(rootObj);
+  holder.updateMatrixWorld(true);
+
+  const rawBox = new THREE.Box3().setFromObject(rootObj);
+  if (!rawBox.isEmpty()) {
+    const center = rawBox.getCenter(new THREE.Vector3());
+    rootObj.position.x -= center.x;
+    rootObj.position.z -= center.z;
+    rootObj.position.y -= rawBox.min.y;
+  }
+  holder.updateMatrixWorld(true);
+
+  const box = new THREE.Box3().setFromObject(rootObj);
+  const stats = { triangles: 0, vertices: 0, meshes: 0, materials: materialMap.size };
+  holder.traverse((o) => {
+    if (o.isMesh && o.geometry) {
+      const g = o.geometry;
+      const posAttr = g.attributes && g.attributes.position ? g.attributes.position : null;
+      const count = g.index ? g.index.count : (posAttr ? posAttr.count : 0);
+      stats.triangles += count / 3;
+      stats.vertices += posAttr ? posAttr.count : 0;
+      stats.meshes++;
+    }
+  });
+  stats.triangles = Math.round(stats.triangles);
+
+  const size = box.isEmpty() ? [0, 0, 0] : box.getSize(new THREE.Vector3()).toArray().map(r4);
+  const min = box.isEmpty() ? [0, 0, 0] : box.min.toArray().map(r4);
+  const max = box.isEmpty() ? [0, 0, 0] : box.max.toArray().map(r4);
+
+  return { object3d: holder, stats, bounds: { size, min, max }, segScale: seg.scale };
+}
+
+function buildWithinBudget(bp, target, quality) {
+  const ladder = [1, 0.82, 0.68, 0.55, 0.44, 0.34, 0.26, 0.2];
+  const attempts = [];
+  let built = null;
+  for (const factor of ladder) {
+    const result = compileBlueprint(bp, { quality, segScale: factor });
+    attempts.push({ segScale: +factor.toFixed(2), triangles: result.stats.triangles });
+    if (built) disposeObject(built.object3d);
+    built = result;
+    if (result.stats.triangles <= target) break;
+  }
+  built.target = target;
+  built.attempts = attempts;
+  built.within = Number.isFinite(target) ? built.stats.triangles <= target : true;
+  built.quality = quality;
+  return built;
+}
+
+/* ═════════════════════ lighting ═════════════════════ */
+/** Soft studio environment: bright emissive panels baked into a PMREM texture, so
+ *  metal and near-black materials pick up reflections instead of rendering flat. */
+function createStudioEnvironment(renderer) {
+  const envScene = new THREE.Scene();
+  const room = new THREE.Mesh(
+    new THREE.BoxGeometry(24, 14, 24),
+    new THREE.MeshBasicMaterial({ color: 0x35465c, side: THREE.BackSide }),
+  );
+  envScene.add(room);
+
+  const panel = (hex, power, w, h, x, y, z) => {
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(w, h),
+      new THREE.MeshBasicMaterial({ color: new THREE.Color(hex).multiplyScalar(power), side: THREE.DoubleSide }),
+    );
+    mesh.position.set(x, y, z);
+    mesh.lookAt(0, 0, 0);
+    envScene.add(mesh);
+  };
+
+  panel(0xffffff, 7, 11, 7, 0, 6.4, 1);      // overhead softbox
+  panel(0xd6ebff, 4.2, 7, 9, -9, 3, 2);      // big soft key from the left
+  panel(0x9ff0d8, 2.4, 7, 9, 9, 3, -2);      // cool rim from the right
+  panel(0xfff0dc, 1.8, 15, 5, 0, -5.2, 5);   // floor bounce
+
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  const target = pmrem.fromScene(envScene, 0.03);
+  pmrem.dispose();
+  envScene.traverse((o) => {
+    if (o.geometry) o.geometry.dispose();
+    if (o.material) o.material.dispose();
+  });
+  return target.texture;
+}
+
+/* ═════════════════════ viewer ═════════════════════ */
+const viewer = (() => {
+  const canvas = $('#view');
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: 'high-performance' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.28;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#101a24');
+  scene.environment = createStudioEnvironment(renderer);
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.01, 600);
+  camera.position.set(3.2, 2.4, 4.2);
+
+  const controls = new OrbitControls(camera, canvas);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.09;
+  controls.minDistance = 0.2;
+  controls.maxDistance = 120;
+  controls.maxPolarAngle = Math.PI * 0.495;
+  controls.autoRotateSpeed = 1.4;
+  controls.target.set(0, 0.7, 0);
+
+  scene.add(new THREE.HemisphereLight(0xe8f0ff, 0x2c3846, 2.1));
+
+  const keyLight = new THREE.DirectionalLight(0xffffff, 3.3);
+  keyLight.position.set(4.5, 7.5, 5.5);
+  keyLight.castShadow = true;
+  keyLight.shadow.mapSize.set(1024, 1024);
+  keyLight.shadow.bias = -0.0008;
+  keyLight.shadow.normalBias = 0.02;
+  scene.add(keyLight);
+  scene.add(keyLight.target);
+
+  const fillLight = new THREE.DirectionalLight(0xbcd4ff, 1.5);
+  fillLight.position.set(-6, 3.5, -4);
+  scene.add(fillLight);
+
+  const rimLight = new THREE.DirectionalLight(0x8ef2dc, 1.1);
+  rimLight.position.set(-1, 2.5, -7);
+  scene.add(rimLight);
+
+  const bounceLight = new THREE.DirectionalLight(0xffe8d0, 0.6);
+  bounceLight.position.set(0, -4, 3);
+  scene.add(bounceLight);
+
+  const grid = new THREE.GridHelper(20, 40, 0x3c5574, 0x1f2d3c);
+  grid.material.opacity = 0.9;
+  grid.material.transparent = true;
+  scene.add(grid);
+
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(160, 160), new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.3 }));
+  ground.rotation.x = -Math.PI / 2;
+  ground.position.y = -0.002;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  const content = new THREE.Group();
+  content.name = 'content';
+  scene.add(content);
+
+  let lastT = performance.now();
+  let fps = 0;
+  let turntable = false;
+
+  function resize() {
+    const host = canvas.parentElement || canvas;
+    const w = Math.max(1, host.clientWidth);
+    const h = Math.max(1, host.clientHeight);
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+
+  function tick() {
+    const t = performance.now();
+    const dt = t - lastT;
+    lastT = t;
+    if (dt > 0 && dt < 400) fps = fps ? fps * 0.9 + (1000 / dt) * 0.1 : 1000 / dt;
+    controls.autoRotate = turntable;
+    controls.update();
+    renderer.render(scene, camera);
+    const fpsEl = $('#hudFps');
+    if (fpsEl) fpsEl.textContent = fps ? fps.toFixed(0) : '—';
+  }
+
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(resize).observe(canvas.parentElement || canvas);
+  window.addEventListener('resize', resize);
+  resize();
+  renderer.setAnimationLoop(tick);
+
+  function setStats(stats) {
+    const set = (sel, value) => { const el = $(sel); if (el) el.textContent = value; };
+    set('#hudTris', stats ? fmtInt(stats.triangles) : '—');
+    set('#hudVerts', stats ? fmtInt(stats.vertices) : '—');
+    set('#hudMeshes', stats ? fmtInt(stats.meshes) : '—');
+  }
+
+  function setModel(object3d, opts = {}) {
+    while (content.children.length) content.remove(content.children[0]);
+    if (object3d) content.add(object3d);
+    const notice = $('#viewNotice');
+    if (notice) notice.hidden = !!object3d;
+    if (opts.fit) fit();
+  }
+
+  function fit(padding = 1.7) {
+    const box = new THREE.Box3().setFromObject(content);
+    if (box.isEmpty()) {
+      camera.position.set(3.2, 2.4, 4.2);
+      camera.near = 0.01;
+      camera.far = 600;
+      camera.updateProjectionMatrix();
+      controls.target.set(0, 0.7, 0);
+      controls.update();
+      return;
+    }
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+    const radius = Math.max(size.x, size.y, size.z) * 0.5;
+    const vFov = deg(camera.fov);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * Math.max(0.1, camera.aspect));
+    const dist = Math.max(radius / Math.sin(vFov / 2), radius / Math.sin(hFov / 2)) * padding;
+    const dir = new THREE.Vector3(0.9, 0.62, 1).normalize();
+    camera.position.copy(center).addScaledVector(dir, dist);
+    camera.near = Math.max(0.01, radius / 200);
+    camera.far = Math.max(60, radius * 60);
+    camera.updateProjectionMatrix();
+    controls.target.copy(center);
+    controls.minDistance = Math.max(0.05, radius * 0.35);
+    controls.maxDistance = Math.max(10, radius * 25);
+    controls.update();
+
+    const r = Math.max(radius, 0.5) * 1.9;
+    keyLight.position.set(center.x + r * 1.2, center.y + r * 2, center.z + r * 1.4);
+    keyLight.target.position.copy(center);
+    keyLight.target.updateMatrixWorld();
+    const shadowCam = keyLight.shadow.camera;
+    shadowCam.left = -r;
+    shadowCam.right = r;
+    shadowCam.top = r;
+    shadowCam.bottom = -r;
+    shadowCam.near = 0.05;
+    shadowCam.far = r * 8;
+    shadowCam.updateProjectionMatrix();
+    grid.scale.setScalar(clamp(radius / 4, 0.25, 6));
+  }
+
+  function setWireframe(on) {
+    const seen = new Set();
+    content.traverse((o) => {
+      if (!o.isMesh) return;
+      const mats = Array.isArray(o.material) ? o.material : [o.material];
+      mats.forEach((m) => { if (m && !seen.has(m)) { seen.add(m); m.wireframe = !!on; } });
+    });
+  }
+
+  return {
+    setModel,
+    fit,
+    setStats,
+    setWireframe,
+    setGrid(on) { grid.visible = !!on; },
+    setTurntable(on) { turntable = !!on; },
+    resize,
+    renderer,
+    scene,
+    camera,
+  };
+})();
+
+/* ═════════════════════ format reference (rendered from NODE_SPEC) ═════════════════════ */
+const copyStore = new Map();
+let copySeq = 0;
+
+function codeBlock(code, label = 'json') {
+  const id = `code-${++copySeq}`;
+  copyStore.set(id, code);
+  return `<div class="codeWrap"><div class="codeHead"><span>${esc(label)}</span><button class="copyBtn" type="button" data-copy="${id}">Copy</button></div><pre class="code">${esc(code)}</pre></div>`;
+}
+
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function fieldTable(fields) {
+  const head = '<thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Meaning</th></tr></thead>';
+  const rows = fields.map((f) => (
+    `<tr><td><code>${esc(f.key)}</code>${f.req ? '<span class="req">required</span>' : ''}</td><td>${f.type}</td><td>${esc(f.def)}</td><td>${f.desc}</td></tr>`
+  )).join('');
+  return `<table class="specTable">${head}<tbody>${rows}</tbody></table>`;
+}
+
+function kindLabel(p) {
+  switch (p.kind) {
+    case 'num>0': return 'number &gt; 0';
+    case 'num>=0': return 'number &ge; 0';
+    case 'num': return `number ${p.min}–${p.max}`;
+    case 'int': return `integer ${p.min}–${p.max}`;
+    case 'bool': return 'boolean';
+    case 'vec3>0': return '[x, y, z] each &gt; 0';
+    case 'points': return `[[radius, height], …] ${p.min}–${p.max} points`;
+    case 'profile': return `[[x, y], …] ${p.min}–${p.max} points`;
+    default: return p.kind;
+  }
+}
+
+function defaultLabel(p) {
+  if (Array.isArray(p.def)) {
+    const flat = JSON.stringify(p.def);
+    return flat.length > 34 ? `${flat.slice(0, 33)}…` : flat;
+  }
+  return String(p.def);
+}
+
+function nodeSnippet(type) {
+  const spec = NODE_SPEC[type];
+  const node = { id: `${type}-1`, type };
+  if (spec.params.length) {
+    node.params = {};
+    spec.params.forEach((p) => { node.params[p.key] = cloneValue(p.def); });
+  }
+  if (type === 'group') node.children = [];
+  return JSON.stringify(node, null, 2);
+}
+
+const SKELETON = {
+  format: 'gsc-geo',
+  version: '0.1',
+  meta: { name: 'my-asset', category: 'prop', units: 'm', upAxis: 'Y', forwardAxis: '-Z' },
+  budget: { targetTriangles: 15000, lodLevels: 3, textureResolution: 2048 },
+  materials: [{ id: 'body', baseColor: [0.6, 0.2, 0.2], metallic: 0.2, roughness: 0.5 }],
+  root: {
+    id: 'root',
+    type: 'group',
+    children: [
+      { id: 'part-1', type: 'box', material: 'body', position: [0, 0.5, 0], params: { size: [1, 1, 1] } },
+    ],
+  },
+};
+
+function renderFormat() {
+  const body = $('#formatBody');
+  if (!body) return;
+
+  const nodeCards = NODE_TYPES.map((type) => {
+    const spec = NODE_SPEC[type];
+    const params = spec.params.length
+      ? fieldTable(spec.params.map((p) => ({ key: p.key, type: kindLabel(p), def: defaultLabel(p), desc: p.desc })))
+      : '<p class="hint">No params — a group only carries a transform and children.</p>';
+    return `<div class="specCard"><h4>${type}</h4><p class="hint">${spec.summary}</p>${params}${codeBlock(nodeSnippet(type), `${type} node`)}</div>`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="docSection">
+      <h3>How this works</h3>
+      <p class="hint">Paste or load a blueprint on the left and press <strong>Compile</strong>. The compiler parses the JSON, validates it against GSC-GEO ${GEO_VERSION}, fills in every default, builds the mesh in this page, produces the LOD chain and lets you export a GLB or the normalized document.</p>
+      <p class="hint">A document that fails validation never reaches the geometry kernel — the issues under the editor name the exact path, for example <code>$.root.children[2].params.depth</code>.</p>
+    </div>
+
+    <div class="docSection">
+      <h3>Minimal valid document</h3>
+      ${codeBlock(JSON.stringify(EXAMPLES.minimal, null, 2), 'minimal.gscgeo.json')}
+    </div>
+
+    <div class="docSection">
+      <h3>Document skeleton</h3>
+      ${codeBlock(JSON.stringify(SKELETON, null, 2), 'skeleton.json')}
+      ${fieldTable(TOP_FIELDS)}
+    </div>
+
+    <div class="docSection">
+      <h3>meta</h3>
+      ${fieldTable(META_FIELDS)}
+    </div>
+
+    <div class="docSection">
+      <h3>budget</h3>
+      ${fieldTable(BUDGET_FIELDS)}
+    </div>
+
+    <div class="docSection">
+      <h3>materials[]</h3>
+      <p class="hint">One entry per material. Colours are sRGB: either <code>[r, g, b]</code> with each channel between 0 and 1, or a hex string such as <code>"#b0243a"</code>.</p>
+      ${fieldTable(MATERIAL_FIELDS)}
+      ${codeBlock(JSON.stringify({ id: 'paint', baseColor: [0.62, 0.08, 0.11], metallic: 0.55, roughness: 0.26 }, null, 2), 'material')}
+    </div>
+
+    <div class="docSection">
+      <h3>nodes</h3>
+      <p class="hint">A node is one object. Children live in the <code>children</code> array of a <code>group</code>; the whole document has exactly one <code>root</code>. Every field except <code>id</code> and <code>type</code> has a default, so short nodes are valid.</p>
+      ${fieldTable(NODE_FIELDS)}
+      ${codeBlock(JSON.stringify({ id: 'wheel', type: 'cylinder', material: 'rubber', position: [0.86, 0.36, 1.29], rotation: [0, 0, 90], mirror: { axis: 'x', enabled: true }, params: { radiusTop: 0.36, radiusBottom: 0.36, height: 0.26, radialSegments: 32 } }, null, 2), 'one node, mirrored across X')}
+    </div>
+
+    <div class="docSection">
+      <h3>node types &amp; params</h3>
+      ${nodeCards}
+    </div>
+
+    <div class="docSection">
+      <h3>Rules and limits</h3>
+      <ul class="hint" style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px">
+        <li>Exactly one <code>root</code> node; ids are unique across the whole document.</li>
+        <li>Coordinates are in the document's <code>units</code> (metres by default), Y up, −Z forward, origin on the ground plane between the object's feet.</li>
+        <li><code>mirror</code> builds a second copy of the node mirrored across an axis — write one wheel, get two.</li>
+        <li>Limits: ${GEO_LIMITS.nodes} nodes, nesting ${GEO_LIMITS.depth} levels deep, extrude profiles up to 64 points, lathe profiles up to 60.</li>
+        <li>The triangle budget is met by lowering segment counts (a deterministic ladder from 1.0 down to 0.2), never by random decimation.</li>
+        <li>Segment counts (<code>radialSegments</code>, <code>widthSegments</code>, <code>segments</code>, <code>tubularSegments</code>, <code>capSegments</code>) are the main cost drivers.</li>
+        <li>Unknown fields and unknown params are reported as warnings and ignored, so typos are visible but not fatal.</li>
+        <li>Download the JSON Schema and add <code>"$schema": "./gsc-geo-0.1.schema.json"</code> to your document for autocomplete and inline validation in your editor — the compiler ignores that field.</li>
+      </ul>
+    </div>
+
+    <div class="docSection">
+      <h3>Examples</h3>
+      <p class="hint">Load one into the editor, then compile it — each one is a complete, valid document.</p>
+      <div class="exampleRow">
+        <button class="btn small" type="button" data-example="minimal">Minimal cube</button>
+        <button class="btn small" type="button" data-example="crate">Wooden crate</button>
+        <button class="btn small" type="button" data-example="car">Sports car</button>
+        <button class="btn small" type="button" data-example="lamp">Table lamp</button>
+        <button class="btn small" type="button" data-example="tv">Samsung TV 55"</button>
+      </div>
+      ${codeBlock(JSON.stringify(EXAMPLES.lamp, null, 2), 'lamp.gscgeo.json')}
+    </div>
+  `;
+}
+
+/* ═════════════════════ JSON Schema, generated from NODE_SPEC ═════════════════════ */
+function paramSchema(p) {
+  switch (p.kind) {
+    case 'num>0': return { type: 'number', exclusiveMinimum: 0 };
+    case 'num>=0': return { type: 'number', minimum: 0 };
+    case 'num': return { type: 'number', minimum: p.min, maximum: p.max };
+    case 'int': return { type: 'integer', minimum: p.min, maximum: p.max };
+    case 'bool': return { type: 'boolean' };
+    case 'vec3>0': return { type: 'array', minItems: 3, maxItems: 3, items: { type: 'number', exclusiveMinimum: 0 } };
+    case 'points': return { type: 'array', minItems: p.min, maxItems: p.max, items: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' }, description: '[radius, height]' } };
+    case 'profile': return { type: 'array', minItems: p.min, maxItems: p.max, items: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'number' }, description: '[x, y]' } };
+    default: return {};
+  }
+}
+
+function buildJsonSchema() {
+  const defs = {
+    color: {
+      oneOf: [
+        { type: 'array', minItems: 3, maxItems: 3, items: { type: 'number', minimum: 0, maximum: 1 } },
+        { type: 'string', pattern: '^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$' },
+      ],
+    },
+    vec3: { type: 'array', minItems: 3, maxItems: 3, items: { type: 'number' } },
+    material: {
+      type: 'object',
+      required: ['id'],
+      additionalProperties: false,
+      properties: {
+        id: { type: 'string', pattern: '^[A-Za-z0-9_.-]+$' },
+        baseColor: { $ref: '#/$defs/color' },
+        metallic: { type: 'number', minimum: 0, maximum: 1 },
+        roughness: { type: 'number', minimum: 0, maximum: 1 },
+        opacity: { type: 'number', minimum: 0, maximum: 1 },
+        emissive: { $ref: '#/$defs/color' },
+        emissiveIntensity: { type: 'number', minimum: 0, maximum: 6 },
+      },
+    },
+    mirror: {
+      type: 'object',
+      additionalProperties: false,
+      properties: {
+        axis: { enum: ['x', 'y', 'z'], default: 'x' },
+        enabled: { type: 'boolean' },
+      },
+    },
+  };
+
+  NODE_TYPES.forEach((type) => {
+    const spec = NODE_SPEC[type];
+    const properties = {
+      id: { type: 'string', pattern: '^[A-Za-z0-9_.-]+$' },
+      type: { const: type },
+      position: { $ref: '#/$defs/vec3' },
+      rotation: { $ref: '#/$defs/vec3' },
+      scale: { $ref: '#/$defs/vec3' },
+      material: { type: 'string' },
+      mirror: { $ref: '#/$defs/mirror' },
+    };
+    if (spec.params.length) {
+      const props = {};
+      NODE_SPEC[type].params.forEach((p) => { props[p.key] = paramSchema(p); });
+      properties.params = { type: 'object', properties: props, additionalProperties: false };
+    }
+    if (type === 'group') {
+      properties.children = { type: 'array', items: { $ref: '#/$defs/node' } };
+    }
+    defs[`node_${type}`] = { type: 'object', required: ['id', 'type'], properties };
+  });
+  defs.node = { oneOf: NODE_TYPES.map((type) => ({ $ref: `#/$defs/node_${type}` })) };
+
+  return {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $id: `https://gsc.dev/schema/gsc-geo-${GEO_VERSION}.json`,
+    title: `GSC-GEO blueprint ${GEO_VERSION}`,
+    description: 'Geometry blueprint consumed by the GSC 3D parr 2 compiler.',
+    type: 'object',
+    required: ['format', 'version', 'root'],
+    properties: {
+      format: { const: GEO_FORMAT },
+      version: { const: GEO_VERSION },
+      meta: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          category: { type: 'string' },
+          units: { enum: ['m', 'cm', 'mm'], default: 'm' },
+          upAxis: { enum: ['Y', 'Z'], default: 'Y' },
+          forwardAxis: { enum: ['-Z', '+Z', '-X', '+X'], default: '-Z' },
+        },
+      },
+      budget: {
+        type: 'object',
+        properties: {
+          targetTriangles: { type: 'number', minimum: 100, maximum: 1000000 },
+          lodLevels: { type: 'integer', minimum: 1, maximum: 6 },
+          textureResolution: { type: 'integer', minimum: 128, maximum: 8192 },
+        },
+      },
+      materials: { type: 'array', items: { $ref: '#/$defs/material' } },
+      root: { $ref: '#/$defs/node' },
+    },
+    $defs: defs,
+  };
+}
+
+/* ═════════════════════ report ═════════════════════ */
+function composeReport() {
+  const resolved = state.resolved || {};
+  const stats = state.build ? state.build.stats : null;
+  const source = $('#source').value || '';
+  return {
+    compiler: `GSC 3D parr 2 · GSC-GEO ${GEO_VERSION}`,
+    compiledAt: new Date().toISOString(),
+    asset: resolved.meta ? resolved.meta.name : 'gsc-asset',
+    source: { bytes: new Blob([source]).size, lines: source.split('\n').length },
+    schema: {
+      format: resolved.format || null,
+      version: resolved.version || null,
+      units: resolved.meta ? resolved.meta.units : 'm',
+      category: resolved.meta ? resolved.meta.category : 'prop',
+      forwardAxis: resolved.meta ? resolved.meta.forwardAxis : '-Z',
+    },
+    counts: state.validation ? state.validation.counts : null,
+    mesh: stats ? {
+      triangles: stats.triangles,
+      vertices: stats.vertices,
+      meshes: stats.meshes,
+      materials: stats.materials,
+      budget: state.build && Number.isFinite(state.build.target) ? state.build.target : null,
+      withinBudget: state.build ? state.build.within : null,
+      quality: state.build ? state.build.quality : null,
+      segScale: state.build ? r4(state.build.segScale) : null,
+      budgetAttempts: state.build ? state.build.attempts : [],
+    } : null,
+    dimensions: state.build ? {
+      unit: 'm',
+      size: state.build.bounds.size,
+      sizeCm: state.build.bounds.size.map((v) => +(v * 100).toFixed(1)),
+    } : null,
+    lods: state.lods.map((l) => ({ level: l.level, triangles: l.triangles, segScale: l.segScale })),
+    materials: (resolved.materials || []).map((m) => ({ ...m })),
+    validation: state.validation ? {
+      ok: state.validation.ok,
+      errors: state.validation.errors,
+      warnings: state.validation.warnings,
+      issues: state.validation.issues.slice(0, 60),
+    } : null,
+    timing: { ...state.timing },
+    export: state.exportInfo,
+    notes: [
+      'Triangles come from parametric tessellation; the budget ladder lowers segment counts rather than decimating.',
+      'Every primitive keeps clean per-part topology, but parts are not stitched into one watertight mesh.',
+      'Materials are parametric — no UV unwrap and no texture baking in this build.',
+      'LODs are deterministic re-tessellations of the same blueprint.',
+    ],
+  };
+}
+
+function renderReport() {
+  const body = $('#reportBody');
+  if (!body) return;
+  const report = state.report;
+  if (!report) {
+    body.innerHTML = '<p class="hint">No report yet — compile a blueprint.</p>';
+    return;
+  }
+  const row = (k, v) => `<div class="kv"><span>${esc(k)}</span><b>${v}</b></div>`;
+  const valid = report.validation;
+  const html = [
+    '<div class="reportHead">',
+    `<h3>${esc(report.asset)}</h3>`,
+    `<p class="hint">${esc(report.compiler)} · ${esc(report.compiledAt)}</p>`,
+    '</div>',
+    '<div class="reportGrid">',
+    row('Triangles', `${fmtInt(report.mesh.triangles)} <em>${report.mesh.budget ? `of ${fmtInt(report.mesh.budget)}` : 'no cap'}</em>`),
+    row('Vertices', fmtInt(report.mesh.vertices)),
+    row('Meshes', fmtInt(report.mesh.meshes)),
+    row('Materials', `${report.materials.length} <em>palette</em>`),
+    row('Size (m)', report.dimensions.size.map((v) => fmtNum(v, 2)).join(' × ')),
+    row('Size (cm)', report.dimensions.sizeCm.map((v) => fmtNum(v, 1)).join(' × ')),
+    row('LODs', report.lods.length ? report.lods.map((l) => `L${l.level}: ${fmtInt(l.triangles)}`).join(' · ') : '—'),
+    row('Budget', report.mesh.withinBudget ? 'within budget' : 'over budget'),
+    row('Quality', esc(String(report.mesh.quality))),
+    row('Nodes', report.counts ? `${report.counts.nodes} (${report.counts.primitives} primitives)` : '—'),
+    row('Validation', valid ? (valid.ok ? `pass · ${valid.warnings} warning(s)` : `fail · ${valid.errors} error(s)`) : '—'),
+    row('Geometry build', report.timing.geometryMs !== undefined ? `${fmtInt(report.timing.geometryMs)} ms` : '—'),
+    row('Total', report.timing.totalMs !== undefined ? `${fmtInt(report.timing.totalMs)} ms` : '—'),
+    '</div>',
+    '<h4>Budget ladder</h4>',
+    `<p class="hint">${report.mesh.budgetAttempts.map((a) => `${a.segScale}× → ${fmtInt(a.triangles)} tris`).join(' · ') || '—'}</p>`,
+    '<h4>Materials</h4>',
+    `<p class="hint">${report.materials.map((m) => `${esc(m.id)} (metal ${fmtNum(m.metallic, 2)}, rough ${fmtNum(m.roughness, 2)}${m.opacity < 1 ? `, opacity ${fmtNum(m.opacity, 2)}` : ''})`).join(' · ') || '—'}</p>`,
+    '<h4>Notes</h4>',
+    `<ul class="hint" style="margin:0;padding-left:18px">${report.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>`,
+  ].join('');
+  body.innerHTML = html;
+}
+
+function reportMarkdown(report) {
+  return [
+    `# ${report.asset} — GSC-GEO compile report`,
+    '',
+    `- Compiler: ${report.compiler}`,
+    `- Compiled at: ${report.compiledAt}`,
+    `- Source: ${report.source.bytes} bytes, ${report.source.lines} lines`,
+    `- Units: ${report.schema.units} · category ${report.schema.category}`,
+    `- Triangles: ${report.mesh.triangles}${report.mesh.budget ? ` of ${report.mesh.budget}` : ''} (${report.mesh.withinBudget ? 'within budget' : 'over budget'})`,
+    `- Vertices: ${report.mesh.vertices}`,
+    `- Meshes: ${report.mesh.meshes}`,
+    `- Materials: ${report.materials.length}`,
+    `- Size: ${report.dimensions.size.join(' x ')} m (${report.dimensions.sizeCm.join(' x ')} cm)`,
+    `- LODs: ${report.lods.length ? report.lods.map((l) => `L${l.level} ${l.triangles}`).join(', ') : 'none'}`,
+    `- Validation: ${report.validation ? (report.validation.ok ? `pass (${report.validation.warnings} warnings)` : `fail (${report.validation.errors} errors)`) : 'not run'}`,
+    '',
+    '## Budget ladder',
+    report.mesh.budgetAttempts.map((a) => `- ${a.segScale}x → ${a.triangles} triangles`).join('\n') || '- none',
+    '',
+    '## Materials',
+    report.materials.map((m) => `- ${m.id}: base ${JSON.stringify(m.baseColor)}, metallic ${m.metallic}, roughness ${m.roughness}, opacity ${m.opacity}`).join('\n') || '- none',
+    '',
+    '## Notes',
+    report.notes.map((n) => `- ${n}`).join('\n'),
+    '',
+    '## Full report',
+    '```json',
+    JSON.stringify(report, null, 2),
+    '```',
+    '',
+  ].join('\n');
+}
+
+/* ═════════════════════ source, parse & issues ═════════════════════ */
+class SourceError extends Error {
+  constructor(message, position) {
+    super(message);
+    this.position = position;
+  }
+}
+
+function parseSource(text) {
+  if (!text.trim()) throw new SourceError('the editor is empty', -1);
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    const match = /position (\d+)/.exec(String(err && err.message ? err.message : err));
+    throw new SourceError(String(err && err.message ? err.message : err), match ? +match[1] : -1);
+  }
+}
+
+function lineColOf(text, position) {
+  if (position < 0 || position === undefined) return null;
+  const before = text.slice(0, position);
+  return { line: before.split('\n').length, column: position - before.lastIndexOf('\n') };
+}
+
+function renderIssues(validation) {
+  const box = $('#issuesBox');
+  if (!box) return;
+  if (!validation || !validation.issues.length) {
+    box.hidden = true;
+    box.innerHTML = '';
+    return;
+  }
+  box.hidden = false;
+  box.innerHTML = validation.issues.slice(0, 60).map((issue) => (
+    `<div class="issue ${issue.level}"><span class="marker">${issue.level === 'error' ? 'x' : '!'}</span><span class="path">${esc(issue.path)}</span><span>${esc(issue.message)}</span></div>`
+  )).join('');
+}
+
+function showSourceError(err) {
+  const box = $('#issuesBox');
+  const col = lineColOf($('#source').value, err.position);
+  const where = col ? `line ${col.line}, column ${col.column}` : 'unknown position';
+  if (box) {
+    box.hidden = false;
+    box.innerHTML = `<div class="issue error"><span class="marker">x</span><span class="path">${esc(where)}</span><span>${esc(err.message)}</span></div>`;
+  }
+  setStatus(`Parse failed (${where}).`);
+}
+
+function updateSourceMeta() {
+  const el = $('#sourceMeta');
+  if (!el) return;
+  const text = $('#source').value;
+  if (!text.trim()) {
+    el.textContent = 'empty document';
+    return;
+  }
+  const bytes = new Blob([text]).size;
+  const lines = text.split('\n').length;
+  let extra = '';
+  try {
+    const doc = JSON.parse(text);
+    const kids = doc && doc.root && Array.isArray(doc.root.children) ? doc.root.children.length : 0;
+    extra = ` · ${doc.format || '?'} ${doc.version || '?'} · ${kids} root child${kids === 1 ? '' : 'ren'}`;
+  } catch {
+    extra = ' · not valid JSON yet';
+  }
+  el.textContent = `${bytes} B · ${lines} lines${extra}`;
+}
+
+/* ═════════════════════ compiling ═════════════════════ */
+function updateStats() {
+  const set = (sel, value) => { const el = $(sel); if (el) el.textContent = value; };
+  const stats = state.build ? state.build.stats : null;
+  set('#statTris', stats ? fmtInt(stats.triangles) : '—');
+  set('#statVerts', stats ? fmtInt(stats.vertices) : '—');
+  set('#statMeshes', stats ? fmtInt(stats.meshes) : '—');
+  set('#statMaterials', stats ? fmtInt(stats.materials) : '—');
+  set('#statSize', state.build ? state.build.bounds.size.map((v) => fmtNum(v, 2)).join(' × ') : '—');
+  set('#statTime', state.timing.totalMs !== undefined ? `${fmtInt(state.timing.totalMs)} ms` : '—');
+}
+
+function updateLodSelect() {
+  const select = $('#lodSelect');
+  if (!select) return;
+  select.innerHTML = '';
+  state.lods.forEach((lod) => {
+    const option = document.createElement('option');
+    option.value = String(lod.level);
+    option.textContent = `${lod.level} · ${fmtInt(lod.triangles)}`;
+    select.appendChild(option);
+  });
+  if (state.lods.length) select.value = '0';
+}
+
+function refreshControls() {
+  const ready = state.lods.length > 0;
+  const compileBtn = $('#btnCompile');
+  if (compileBtn) {
+    compileBtn.disabled = state.busy;
+    compileBtn.textContent = state.busy ? 'Compiling…' : 'Compile';
+  }
+  const glb = $('#btnGlb');
+  if (glb) glb.disabled = !ready || state.busy;
+  const normalized = $('#btnNormalized');
+  if (normalized) normalized.disabled = !state.resolved || state.busy;
+  updateMobileBar();
+}
+
+async function runCompile() {
+  if (state.busy) return;
+  state.busy = true;
+  refreshControls();
+  resetPhases();
+  setProgress(6);
+  const startedAt = performance.now();
+  state.timing = {};
+  try {
+    const text = $('#source').value;
+
+    setPhase('parse', 'run');
+    setStatus('Parsing the blueprint…');
+    let doc;
+    try {
+      doc = parseSource(text);
+    } catch (err) {
+      setPhase('parse', 'fail');
+      showSourceError(err);
+      log(`Parse failed: ${err.message}`, 'error');
+      setProgress(0);
+      return;
+    }
+    state.parsed = doc;
+    updateSourceMeta();
+    setPhase('parse', 'done');
+    setProgress(20);
+
+    setPhase('validate', 'run');
+    setStatus('Validating against GSC-GEO 0.1…');
+    await sleep(10);
+    const validation = validateBlueprint(doc);
+    state.validation = validation;
+    renderIssues(validation);
+
+    if (!validation.ok) {
+      setPhase('validate', 'fail');
+      log(`Rejected: ${validation.errors} error(s), ${validation.warnings} warning(s). Nothing was built.`, 'error');
+      setStatus(`Rejected: ${validation.errors} error(s) — fix the issues listed under the editor.`);
+      setProgress(0);
+      return;
+    }
+    setPhase('validate', 'done');
+    log(`Valid: ${validation.counts.nodes} nodes · ${validation.counts.primitives} primitives · ${validation.counts.materials} materials${validation.warnings ? ` · ${validation.warnings} warning(s)` : ''}.`, 'ok');
+    setProgress(34);
+
+    const resolved = resolveBlueprint(doc);
+    state.resolved = resolved;
+    $('#outputBody').textContent = JSON.stringify(resolved, null, 2);
+    refreshControls();
+
+    setPhase('geometry', 'run');
+    setStatus('Constructing geometry…');
+    await sleep(10);
+
+    const quality = $('#quality').value;
+    const capInput = int($('#capTris').value, 0);
+    const lodInput = int($('#lodLevels').value, 0);
+    const bpBudget = resolved.budget && resolved.budget.targetTriangles ? resolved.budget.targetTriangles : 0;
+    const target = capInput > 0 ? capInput : (bpBudget > 0 ? bpBudget : Infinity);
+
+    const startedGeometry = performance.now();
+    let built;
+    try {
+      built = buildWithinBudget(resolved, target, quality);
+    } catch (err) {
+      setPhase('geometry', 'fail');
+      log(`Geometry construction failed: ${err.message}`, 'error');
+      setStatus('Geometry construction failed — see the log.');
+      return;
+    }
+    state.timing.geometryMs = Math.round(performance.now() - startedGeometry);
+
+    if (!built.stats.meshes) {
+      setPhase('geometry', 'fail');
+      log('The blueprint produced no geometry — every group is empty.', 'error');
+      setStatus('Nothing to build: the blueprint has no primitives.');
+      return;
+    }
+    setPhase('geometry', 'done');
+    log(`Geometry: ${fmtInt(built.stats.triangles)} triangles in ${state.timing.geometryMs} ms${built.within ? '' : ' — over the budget'}.`, built.within ? 'ok' : 'warn');
+
+    setPhase('lod', 'run');
+    setProgress(66);
+    await sleep(10);
+    const lodTarget = lodInput > 0 ? lodInput : (resolved.budget && resolved.budget.lodLevels ? resolved.budget.lodLevels : 1);
+    const lodCount = clamp(lodTarget, 1, 6);
+    const lods = [];
+    for (let i = 0; i < lodCount; i++) {
+      const factor = lodCount === 1 ? 1 : 1 - i * (0.55 / (lodCount - 1));
+      const result = i === 0 ? built : compileBlueprint(resolved, { quality, segScale: factor });
+      lods.push({ level: i, triangles: result.stats.triangles, segScale: +factor.toFixed(2), stats: result.stats, object3d: result.object3d });
+    }
+
+    const previous = state.lods.slice();
+    state.build = built;
+    state.stats = built.stats;
+    state.lods = lods;
+    viewer.setModel(lods[0].object3d, { fit: true });
+    viewer.setStats(lods[0].stats);
+    updateLodSelect();
+    if (isMobileLayout() && currentMobileView() === 'edit') pendingFitOnShow = true;
+    previous.forEach((lod) => { if (lod.object3d) disposeObject(lod.object3d); });
+
+    setPhase('lod', 'done');
+    setPhase('report', 'run');
+    setProgress(90);
+    state.timing.totalMs = Math.round(performance.now() - startedAt);
+    state.report = composeReport();
+    renderReport();
+    updateStats();
+    setPhase('report', 'done');
+    setProgress(100);
+    log(`Compiled ${resolved.meta.name}: ${fmtInt(built.stats.triangles)} triangles, ${lods.length} LOD(s), ${state.timing.totalMs} ms.`, 'ok');
+    setStatus(`Compiled ${fmtInt(built.stats.triangles)} triangles in ${fmtInt(state.timing.totalMs)} ms. Export the GLB when you are happy.`);
+    if (isMobileLayout()) {
+      setMobileView('model');
+      requestAnimationFrame(() => {
+        viewer.resize();
+        viewer.fit();
+      });
+    }
+  } catch (err) {
+    log(`Compile failed: ${err.message}`, 'error');
+    setStatus(`Compile failed: ${err.message}`);
+  } finally {
+    state.busy = false;
+    refreshControls();
+  }
+}
+
+/* ═════════════════════ exports ═════════════════════ */
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  setTimeout(() => { URL.revokeObjectURL(url); link.remove(); }, 2500);
+}
+
+function currentName() {
+  const resolved = state.resolved;
+  return slug((resolved && resolved.meta && resolved.meta.name) || 'gsc-asset');
+}
+
+async function exportGlb() {
+  if (!state.lods.length) { log('Compile a blueprint before exporting.', 'warn'); return; }
+  if (state.busy) return;
+  state.busy = true;
+  refreshControls();
+  setStatus('Exporting GLB…');
+  try {
+    const group = new THREE.Group();
+    group.name = currentName();
+    state.lods.forEach((lod) => {
+      const clone = lod.object3d.clone(true);
+      clone.name = `LOD${lod.level}`;
+      group.add(clone);
+    });
+    group.updateMatrixWorld(true);
+    const exporter = new GLTFExporter();
+    const buffer = await new Promise((resolve, reject) => {
+      exporter.parse(group, (result) => resolve(result), (err) => reject(err instanceof Error ? err : new Error(String(err))), { binary: true, onlyVisible: true });
+    });
+    const bytes = buffer && buffer.byteLength ? buffer.byteLength : 0;
+    const file = `${group.name}.glb`;
+    downloadBlob(new Blob([buffer], { type: 'model/gltf-binary' }), file);
+    state.exportInfo = { file, bytes, lods: state.lods.length, exportedAt: new Date().toISOString() };
+    state.report = composeReport();
+    renderReport();
+    log(`Exported ${file} — ${fmtInt(bytes / 1024)} KB with ${state.lods.length} LOD node(s).`, 'ok');
+    setStatus(`Exported ${file}.`);
+  } catch (err) {
+    log(`Export failed: ${err.message}`, 'error');
+  } finally {
+    state.busy = false;
+    refreshControls();
+  }
+}
+
+function downloadNormalized() {
+  if (!state.resolved) { log('Compile a blueprint first.', 'warn'); return; }
+  downloadBlob(new Blob([`${JSON.stringify(state.resolved, null, 2)}\n`], { type: 'application/json' }), `${currentName()}.gscgeo.json`);
+  log('Normalized blueprint downloaded.');
+}
+
+function downloadSchema() {
+  const schema = buildJsonSchema();
+  downloadBlob(new Blob([`${JSON.stringify(schema, null, 2)}\n`], { type: 'application/schema+json' }), `gsc-geo-${GEO_VERSION}.schema.json`);
+  log('JSON Schema downloaded — point your editor at it with a "$schema" key.');
+}
+
+/* ═════════════════════ source loading ═════════════════════ */
+function setSource(doc, { compile = false } = {}) {
+  $('#source').value = typeof doc === 'string' ? doc : JSON.stringify(doc, null, 2);
+  updateSourceMeta();
+  if (compile) runCompile();
+}
+
+function loadExample(name, { compile = true } = {}) {
+  const example = EXAMPLES[name];
+  if (!example) return;
+  setSource(example, { compile });
+  log(`Example "${name}" loaded.`);
+}
+
+async function readFileIntoSources(file) {
+  if (!file) return;
+  try {
+    const text = await file.text();
+    $('#source').value = text;
+    updateSourceMeta();
+    log(`Loaded ${file.name} (${new Blob([text]).size} bytes).`);
+    runCompile();
+  } catch (err) {
+    log(`Could not read the file: ${err.message}`, 'error');
+  }
+}
+
+/* ═════════════════════ wiring ═════════════════════ */
+function wireUi() {
+  $('#btnCompile').addEventListener('click', () => runCompile());
+  $('#source').addEventListener('input', updateSourceMeta);
+  window.addEventListener('keydown', (e) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      runCompile();
+    }
+  });
+
+  const fileInput = $('#fileInput');
+  $('#btnLoadFile').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files[0]) readFileIntoSources(fileInput.files[0]);
+  });
+
+  const source = $('#source');
+  ['dragenter', 'dragover'].forEach((ev) => {
+    window.addEventListener(ev, (e) => {
+      e.preventDefault();
+      source.classList.add('over');
+    });
+  });
+  ['dragleave', 'drop'].forEach((ev) => {
+    window.addEventListener(ev, (e) => {
+      e.preventDefault();
+      source.classList.remove('over');
+    });
+  });
+  window.addEventListener('drop', (e) => {
+    const file = e.dataTransfer && e.dataTransfer.files ? e.dataTransfer.files[0] : null;
+    if (file) readFileIntoSources(file);
+  });
+
+  $('#exampleSelect').addEventListener('change', (e) => {
+    const name = e.target.value;
+    e.target.value = '';
+    if (name) loadExample(name);
+  });
+
+  document.addEventListener('click', (e) => {
+    const exampleBtn = e.target.closest('[data-example]');
+    if (exampleBtn) {
+      loadExample(exampleBtn.dataset.example);
+      return;
+    }
+    const copyBtn = e.target.closest('[data-copy]');
+    if (copyBtn) {
+      const code = copyStore.get(copyBtn.dataset.copy);
+      if (code === undefined) return;
+      copyText(code).then((ok) => {
+        copyBtn.textContent = ok ? 'Copied' : 'Select manually';
+        setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1300);
+      });
+    }
+  });
+
+  $('#btnBeautify').addEventListener('click', () => {
+    try {
+      const doc = JSON.parse($('#source').value);
+      setSource(doc);
+      log('Document tidied.');
+    } catch (err) {
+      log(`Cannot tidy: ${err.message}`, 'error');
+    }
+  });
+  $('#btnClear').addEventListener('click', () => {
+    $('#source').value = '';
+    updateSourceMeta();
+    renderIssues(null);
+    setStatus('Editor cleared.');
+  });
+
+  $('#btnGlb').addEventListener('click', exportGlb);
+  $('#btnNormalized').addEventListener('click', downloadNormalized);
+  $('#btnCopyOutput').addEventListener('click', () => {
+    if (!state.resolved) { log('Nothing to copy yet.', 'warn'); return; }
+    copyText(JSON.stringify(state.resolved, null, 2)).then((ok) => log(ok ? 'Normalized JSON copied.' : 'Could not access the clipboard.', ok ? 'ok' : 'warn'));
+  });
+  $('#btnDownloadOutput').addEventListener('click', downloadNormalized);
+  $('#btnSchema').addEventListener('click', downloadSchema);
+  $('#btnReportJson').addEventListener('click', () => {
+    if (!state.report) { log('Compile once — there is no report yet.', 'warn'); return; }
+    downloadBlob(new Blob([`${JSON.stringify(state.report, null, 2)}\n`], { type: 'application/json' }), `${currentName()}-report.json`);
+  });
+  $('#btnReportMd').addEventListener('click', () => {
+    if (!state.report) { log('Compile once — there is no report yet.', 'warn'); return; }
+    downloadBlob(new Blob([reportMarkdown(state.report)], { type: 'text/markdown' }), `${currentName()}-report.md`);
+  });
+
+  $('#btnFit').addEventListener('click', () => viewer.fit());
+  $('#chipWire').addEventListener('click', (e) => {
+    const on = e.currentTarget.dataset.on !== '1';
+    e.currentTarget.dataset.on = on ? '1' : '0';
+    viewer.setWireframe(on);
+  });
+  $('#chipSpin').addEventListener('click', (e) => {
+    const on = e.currentTarget.dataset.on !== '1';
+    e.currentTarget.dataset.on = on ? '1' : '0';
+    viewer.setTurntable(on);
+  });
+  $('#gridToggle').addEventListener('change', (e) => viewer.setGrid(e.target.value === 'on'));
+  $('#lodSelect').addEventListener('change', (e) => {
+    const level = int(e.target.value, 0);
+    const lod = state.lods.find((l) => l.level === level);
+    if (!lod) return;
+    viewer.setModel(lod.object3d, { fit: false });
+    viewer.setStats(lod.stats);
+    log(`Showing LOD ${lod.level} · ${fmtInt(lod.stats.triangles)} triangles.`);
+  });
+
+  document.querySelectorAll('.tab').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      const name = tab.dataset.tab;
+      document.querySelectorAll('.tab').forEach((t) => t.classList.toggle('active', t === tab));
+      document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('active', p.id === `panel-${name}`));
+      viewer.resize();
+    });
+  });
+
+  document.querySelectorAll('.seg button').forEach((btn) => {
+    btn.addEventListener('click', () => setMobileView(btn.dataset.view));
+  });
+
+  const barCompile = $('#btnCompileBar');
+  if (barCompile) {
+    barCompile.addEventListener('click', () => {
+      if (barCompile.dataset.action === 'export') exportGlb();
+      else runCompile();
+    });
+  }
+
+  if (MOBILE_QUERY) {
+    const onBreakpoint = () => {
+      if (isMobileLayout()) setMobileView(currentMobileView());
+      else {
+        delete document.body.dataset.view;
+        updateMobileBar();
+        viewer.resize();
+      }
+    };
+    if (MOBILE_QUERY.addEventListener) MOBILE_QUERY.addEventListener('change', onBreakpoint);
+    else if (MOBILE_QUERY.addListener) MOBILE_QUERY.addListener(onBreakpoint);
+  }
+}
+
+/* ═════════════════════ boot ═════════════════════ */
+function init() {
+  renderFormat();
+  wireUi();
+  updateSourceMeta();
+  refreshControls();
+  setProgress(0);
+  log('GSC-GEO compiler ready — paste a blueprint and press Compile (or ⌘/Ctrl + Enter).');
+  if (isMobileLayout()) setMobileView('model');
+  loadExample('minimal', { compile: true });
+}
+
+init();
+</script>
+</body>
+</html>
