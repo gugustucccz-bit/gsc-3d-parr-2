@@ -436,6 +436,7 @@ body[data-theme="light"] table.specTable td{border-color:#e6ecf3;color:#2c3a4a}
         <button class="exChip" type="button" data-example="tv">Samsung TV 55"</button>
         <button class="exChip" type="button" data-example="phone">iPhone 18 Pro</button>
         <button class="exChip" type="button" data-example="macbook">MacBook Pro 14"</button>
+        <button class="exChip" type="button" data-example="airpods">AirPods Pro case</button>
       </div>
       <div class="editorWrap">
         <textarea id="source" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder='Paste a GSC-GEO blueprint here, or drop a .json file.
@@ -728,7 +729,7 @@ function setMobileView(view) {
 
 /* ═════════════════════ the format: one definition for everything ═════════════════════ */
 const GEO_VERSION = '0.1';
-const APP_BUILD = 'v0.7';
+const APP_BUILD = 'v0.8';
 const GEO_FORMAT = 'gsc-geo';
 const GEO_LIMITS = { nodes: 400, depth: 12 };
 
@@ -763,7 +764,7 @@ const MATERIAL_FIELDS = [
   { key: 'opacity', type: 'number 0–1', req: false, def: '1', desc: 'Below 1 makes the material transparent (glass, decals).' },
   { key: 'emissive', type: '[r, g, b] or "#rrggbb"', req: false, def: '—', desc: 'Emission colour, for lamps, screens and lights.' },
   { key: 'emissiveIntensity', type: 'number 0–6', req: false, def: '1', desc: 'Emission strength; only used together with <code>emissive</code>.' },
-  { key: 'texture', type: 'data URL or { kind }', req: false, def: '—', desc: 'Base-colour map: either a <code>data:image/…</code> URL, or a procedural descriptor <code>{ "kind": "gradient" | "keys" | "stripes" | "grid", … }</code> drawn by the compiler — no external file needed.' },
+  { key: 'texture', type: 'data URL or { kind }', req: false, def: '—', desc: 'Base-colour map: either a <code>data:image/…</code> URL, or a procedural descriptor <code>{ "kind": "gradient" | "keys" | "stripes" | "grid" | "text", … }</code> drawn by the compiler — no external file needed.' },
   { key: 'textureRepeat', type: '[u, v]', req: false, def: '[1, 1]', desc: 'Tiling factor of the texture. For <code>extrude</code> geometry the UVs are blueprint units, so use <code>1/size</code>.' },
   { key: 'textureOffset', type: '[u, v]', req: false, def: '[0, 0]', desc: 'UV offset, applied after the repeat. <code>[0.5, 0.5]</code> centres the image on an extrude.' },
 ];
@@ -852,6 +853,7 @@ const NODE_SPEC = {
       { key: 'taper', kind: 'num', min: 0.05, max: 4, def: 1, desc: 'Scale of the far (+Z) cap: 1 is a straight extrusion, 0.6 a tapered one.' },
       { key: 'bevel', kind: 'bool', def: false, desc: 'Round the caps slightly.' },
       { key: 'bevelSize', kind: 'num>0', def: 0.02, desc: 'Bevel size, used when <code>bevel</code> is true.' },
+      { key: 'bevelSegments', kind: 'int', min: 1, max: 8, def: 2, desc: 'Rounds of the bevel — higher is a smoother rounded edge.' },
     ],
   },
 };
@@ -1382,6 +1384,101 @@ const EXAMPLES = {
       ],
     },
   },
+  airpods: {
+    format: 'gsc-geo',
+    version: '0.1',
+    meta: { name: 'airpods-pro-case', category: 'accessory', units: 'mm', upAxis: 'Y', forwardAxis: '-Z' },
+    budget: { targetTriangles: 20000, lodLevels: 3, textureResolution: 1024 },
+    materials: [
+      { id: 'caseWhite', baseColor: [0.93, 0.93, 0.94], metallic: 0, roughness: 0.22 },
+      { id: 'caseInner', baseColor: [0.05, 0.05, 0.055], metallic: 0, roughness: 0.6 },
+      { id: 'alu', baseColor: [0.72, 0.73, 0.75], metallic: 1, roughness: 0.25 },
+      { id: 'portMetal', baseColor: [0.55, 0.56, 0.58], metallic: 1, roughness: 0.35 },
+      { id: 'portDark', baseColor: [0.02, 0.02, 0.025], metallic: 0.1, roughness: 0.5 },
+      { id: 'led', baseColor: [0.1, 0.9, 0.4], metallic: 0, roughness: 0.3, emissive: [0.2, 1, 0.45], emissiveIntensity: 1.6 },
+      { id: 'etch', baseColor: [1, 1, 1], metallic: 0, roughness: 0.55, texture: { kind: 'text', lines: ['AirPods Pro', 'Model A2698 · USB-C', 'Designed by Apple in California'], color: '#9aa0a8', bg: 'transparent', size: 0.17, weight: 500, tracking: 0.05 } },
+      { id: 'etchBack', baseColor: [1, 1, 1], metallic: 0, roughness: 0.55, texture: { kind: 'text', lines: ['AirPods Pro', 'Assembled in China'], color: '#9aa0a8', bg: 'transparent', size: 0.2, weight: 500, tracking: 0.08 } },
+    ],
+    root: {
+      id: 'airpods-pro-case',
+      type: 'group',
+      children: [
+        {
+          id: 'body',
+          type: 'extrude',
+          material: 'caseWhite',
+          position: [0, 30.3, 0],
+          params: {
+            profile: [
+              [20.6, 19.7], [19.9454, 22.991], [18.0812, 25.7812], [15.291, 27.6454], [12, 28.3],
+              [-15.291, 27.6454], [-18.0812, 25.7812], [-19.9454, 22.991], [-20.6, 19.7],
+              [-19.9454, -22.991], [-18.0812, -25.7812], [-15.291, -27.6454], [-12, -28.3],
+              [12, -28.3], [15.291, -27.6454], [18.0812, -25.7812], [19.9454, -22.991], [20.6, -19.7],
+            ],
+            depth: 17.7,
+            bevel: true,
+            bevelSize: 2,
+            bevelSegments: 4,
+          },
+        },
+        {
+          id: 'seam-band',
+          type: 'extrude',
+          material: 'caseInner',
+          position: [0, 47.72, 0],
+          rotation: [90, 0, 0],
+          params: {
+            profile: [
+              [22.66, 8.91], [22.0742, 10.3242], [20.66, 10.91], [-20.66, 10.91], [-22.0742, 10.3242], [-22.66, 8.91],
+              [-22.66, -8.91], [-22.0742, -10.3242], [-20.66, -10.91], [20.66, -10.91], [22.0742, -10.3242], [22.66, -8.91],
+            ],
+            depth: 0.5,
+            taper: 1,
+          },
+        },
+        { id: 'hinge', type: 'box', material: 'alu', position: [0, 47.6, 10.9], params: { size: [16, 2.4, 0.6] } },
+        { id: 'led', type: 'cylinder', material: 'led', position: [0, 31, -10.88], rotation: [90, 0, 0], params: { radiusTop: 1.1, radiusBottom: 1.1, height: 0.3, radialSegments: 20 } },
+        {
+          id: 'port-rim',
+          type: 'extrude',
+          material: 'portMetal',
+          position: [0, 0.55, 0],
+          rotation: [90, 0, 0],
+          params: {
+            profile: [
+              [2.8, -1.6], [3.6, -1.386], [4.18564, -0.8], [4.4, 0], [4.18564, 0.8], [3.6, 1.386], [2.8, 1.6],
+              [-2.8, 1.6], [-3.6, 1.386], [-4.18564, 0.8], [-4.4, 0], [-4.18564, -0.8], [-3.6, -1.386], [-2.8, -1.6],
+            ],
+            depth: 1.2,
+            taper: 1,
+          },
+        },
+        {
+          id: 'port-slot',
+          type: 'extrude',
+          material: 'portDark',
+          position: [0, 0.42, 0],
+          rotation: [90, 0, 0],
+          params: {
+            profile: [
+              [2.6, -1.1], [3.15, -0.9526], [3.5526, -0.55], [3.7, 0], [3.5526, 0.55], [3.15, 0.9526], [2.6, 1.1],
+              [-2.6, 1.1], [-3.15, 0.9526], [-3.5526, 0.55], [-3.7, 0], [-3.15, -0.9526], [-2.6, -1.1],
+            ],
+            depth: 1,
+            taper: 1,
+          },
+        },
+        { id: 'speaker-1', type: 'cylinder', material: 'portDark', position: [6.6, 0.42, 0], params: { radiusTop: 0.55, radiusBottom: 0.55, height: 0.9, radialSegments: 12 } },
+        { id: 'speaker-2', type: 'cylinder', material: 'portDark', position: [8.6, 0.42, 0], params: { radiusTop: 0.55, radiusBottom: 0.55, height: 0.9, radialSegments: 12 } },
+        { id: 'speaker-3', type: 'cylinder', material: 'portDark', position: [10.6, 0.42, 0], params: { radiusTop: 0.55, radiusBottom: 0.55, height: 0.9, radialSegments: 12 } },
+        { id: 'lanyard', type: 'box', material: 'portDark', position: [22.32, 9, 0], params: { size: [0.6, 5, 9] } },
+        { id: 'pairing-ring', type: 'torus', material: 'caseInner', position: [0, 12, 10.72], params: { radius: 4.6, tube: 0.22, radialSegments: 12, tubularSegments: 48 } },
+        { id: 'pairing-button', type: 'cylinder', material: 'caseWhite', position: [0, 12, 10.8], rotation: [90, 0, 0], params: { radiusTop: 4.2, radiusBottom: 4.2, height: 0.5, radialSegments: 40 } },
+        { id: 'text-bottom', type: 'box', material: 'etch', position: [0, -0.02, -3], params: { size: [30, 0.06, 12] } },
+        { id: 'text-back', type: 'box', material: 'etchBack', position: [0, 6, 10.88], params: { size: [26, 10, 0.06] } },
+      ],
+    },
+  },
 };
 
 /* ───────────────────────── state ───────────────────────── */
@@ -1497,8 +1594,8 @@ function validateBlueprint(doc) {
       if (m.texture !== undefined) {
         const t = m.texture;
         const ok = (typeof t === 'string' && /^data:image\//.test(t))
-          || (isPlainObject(t) && ['gradient', 'keys', 'stripes', 'grid'].includes(t.kind));
-        if (!ok) err('E_MATERIAL_TEXTURE', `${p}.texture`, 'texture must be a data:image… URL or { "kind": "gradient" | "keys" | "stripes" | "grid" }.');
+          || (isPlainObject(t) && ['gradient', 'keys', 'stripes', 'grid', 'text'].includes(t.kind));
+        if (!ok) err('E_MATERIAL_TEXTURE', `${p}.texture`, 'texture must be a data:image… URL or { "kind": "gradient" | "keys" | "stripes" | "grid" | "text" }.');;
         ['textureRepeat', 'textureOffset'].forEach((key) => {
           const v = m[key];
           if (v !== undefined && !(Array.isArray(v) && v.length === 2 && v.every(isNum))) {
@@ -1849,6 +1946,24 @@ function drawGrid(ctx, w, h, spec) {
   }
 }
 
+function drawText(ctx, w, h, spec) {
+  if (spec.bg && spec.bg !== 'transparent') {
+    ctx.fillStyle = spec.bg;
+    ctx.fillRect(0, 0, w, h);
+  }
+  const lines = Array.isArray(spec.lines) && spec.lines.length ? spec.lines : [String(spec.text || '')];
+  const size = clamp(num(spec.size, 0.16), 0.03, 1) * h;
+  ctx.fillStyle = spec.color || '#8b8f97';
+  ctx.textAlign = spec.align || 'center';
+  ctx.textBaseline = 'middle';
+  ctx.font = `${clamp(num(spec.weight, 500), 100, 900)} ${size}px ${spec.font || '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'}`;
+  try { ctx.letterSpacing = `${size * clamp(num(spec.tracking, 0.05), 0, 0.4)}px`; } catch (err) { /* older canvas */ }
+  const x = ctx.textAlign === 'left' ? w * 0.06 : (ctx.textAlign === 'right' ? w * 0.94 : w / 2);
+  lines.forEach((line, i) => {
+    ctx.fillText(String(line), x, (h * (i + 1)) / (lines.length + 1), w * 0.9);
+  });
+}
+
 /** Turns a material's texture descriptor into a cached three texture. */
 function buildTexture(def) {
   const spec = def && def.texture;
@@ -1874,6 +1989,7 @@ function buildTexture(def) {
     if (kind === 'keys') drawKeys(ctx, size, size, spec);
     else if (kind === 'stripes') drawStripes(ctx, size, size, spec);
     else if (kind === 'grid') drawGrid(ctx, size, size, spec);
+    else if (kind === 'text') drawText(ctx, size, size, spec);
     else drawGradient(ctx, size, size, spec);
     texture = new THREE.CanvasTexture(canvas);
   }
@@ -1912,6 +2028,7 @@ function makeMaterial(def) {
   if (map) {
     mat.map = map;
     if (!def || def.baseColor === undefined) mat.color.setRGB(1, 1, 1, THREE.SRGBColorSpace);
+    if (def && def.texture && typeof def.texture === 'object' && def.texture.kind === 'text') mat.alphaTest = 0.45;
   }
   return mat;
 }
@@ -2000,7 +2117,7 @@ function buildGeometry(node, seg) {
         bevelEnabled: bevel,
         bevelSize: Math.max(0.001, num(P.bevelSize, 0.02)),
         bevelThickness: Math.max(0.001, num(P.bevelSize, 0.02)),
-        bevelSegments: 2,
+        bevelSegments: clamp(Math.round(num(P.bevelSegments, 2)), 1, 8),
         steps: 1,
         curveSegments: clamp(Math.round(12 * seg.scale), 4, 32),
       });
@@ -2529,6 +2646,7 @@ function renderFormat() {
         <button class="btn small" type="button" data-example="tv">Samsung TV 55"</button>
         <button class="btn small" type="button" data-example="phone">iPhone 18 Pro</button>
         <button class="btn small" type="button" data-example="macbook">MacBook Pro 14"</button>
+        <button class="btn small" type="button" data-example="airpods">AirPods Pro case</button>
       </div>
       ${codeBlock(JSON.stringify(EXAMPLES.lamp, null, 2), 'lamp.gscgeo.json')}
     </div>
@@ -2578,7 +2696,7 @@ function buildJsonSchema() {
               type: 'object',
               required: ['kind'],
               properties: {
-                kind: { enum: ['gradient', 'keys', 'stripes', 'grid'] },
+                kind: { enum: ['gradient', 'keys', 'stripes', 'grid', 'text'] },
                 from: { type: 'string' },
                 to: { type: 'string' },
                 angle: { type: 'number' },

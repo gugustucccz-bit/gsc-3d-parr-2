@@ -115,8 +115,9 @@ without breaking a build.
 
 A material can carry a `texture` that needs no external file: either a `data:image/…` URL (it
 travels inside the JSON) or a procedural descriptor the compiler paints into a canvas —
-`{"kind": "gradient", …}`, `{"kind": "keys", …}`, `{"kind": "stripes", …}` or
-`{"kind": "grid", …}`. `textureRepeat` and `textureOffset` place it; `extrude` geometry uses
+`{"kind": "gradient", …}`, `{"kind": "keys", …}`, `{"kind": "stripes", …}`,
+`{"kind": "grid", …}` or `{"kind": "text", lines: […]}` for etched lettering with an alpha
+cut-out. `textureRepeat` and `textureOffset` place it; `extrude` geometry uses
 blueprint units as UVs, so a 302 × 196 mm screen plate needs `[0.003311, 0.005102]` with offset
 `[0.5, 0.5]`. The iPhone's wallpaper and the MacBook's keyboard and display are made this way,
 and the GLB export embeds the maps.
@@ -127,14 +128,17 @@ Compile plays a haptic pattern on success (`compile-ok`) or on a rejected bluepr
 
 ## Examples in the page
 
-Seven complete blueprints ship with the compiler and load from the example chips under the
+Eight complete blueprints ship with the compiler and load from the example chips under the
 editor toolbar (or the Format tab): a minimal cube, a wooden crate, a sports car (extruded body
 panels, mirrored wheels and lights), a table lamp (lathe base, cone shade, emissive bulb), a 1:1
 **Samsung TV 55"** built in millimetres, a 1:1 **iPhone Pro** — tessellated rounded body, inset
 glasses, a lit screen with a wallpaper texture, home-screen grid, dock and Dynamic Island, camera
 plateau with three lens rings, flash, lidar, side buttons, USB-C and speaker holes, in the
-149.6 × 71.5 × 8.25 mm current-Pro footprint — and a 1:1 **MacBook Pro 14"** open on its hinge,
-with an aluminium body, textured keyboard, trackpad, display with wallpaper and its ports.
+149.6 × 71.5 × 8.25 mm current-Pro footprint — a 1:1 **MacBook Pro 14"** open on its hinge, with
+an aluminium body, textured keyboard, trackpad, display with wallpaper and its ports — and a 1:1
+**AirPods Pro case**: one bevel-rounded shell with a seam band, aluminium hinge, pairing button
+and ring, status LED, USB-C port with a metal rim and a dark slot, speaker holes, lanyard slot
+and etched text on the bottom and the back.
 
 ## Building a 1:1 object with an AI
 
